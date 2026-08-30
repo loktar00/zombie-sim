@@ -31,8 +31,14 @@
 
   // the same faction ramp the figure uses
   const FACTIONS = [
-    [70, 96, 150], [150, 54, 44], [64, 132, 74], [150, 120, 60],
-    [120, 80, 140], [60, 130, 130], [120, 86, 60], [96, 104, 120],
+    [70, 96, 150],
+    [150, 54, 44],
+    [64, 132, 74],
+    [150, 120, 60],
+    [120, 80, 140],
+    [60, 130, 130],
+    [120, 86, 60],
+    [96, 104, 120],
   ];
   function wash(i, a) {
     const c = FACTIONS[i % FACTIONS.length];
@@ -95,7 +101,7 @@
       const n = 12;
       for (let k = 0; k <= n; k++) {
         const a = (k / n) * Math.PI * 2;
-        const rr = b.r + (ZS.sjit(seed + i * 5 + k) * 0.18);
+        const rr = b.r + ZS.sjit(seed + i * 5 + k) * 0.18;
         const px = x + b.dx + Math.cos(a) * rr;
         const py = y + b.dy + Math.sin(a) * rr;
         if (k) c.lineTo(px, py);

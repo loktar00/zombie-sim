@@ -27,10 +27,26 @@
   /* Pentatonic C major across 4 octaves. Indexing lets the bar patterns use
      small numbers (0..4) instead of note names everywhere. */
   const PENT = [
-    130.81, 146.83, 164.81, 196.0, 220.0, // C3 D3 E3 G3 A3
-    261.63, 293.66, 329.63, 392.0, 440.0, // C4 D4 E4 G4 A4
-    523.25, 587.33, 659.25, 783.99, 880.0, // C5 D5 E5 G5 A5
-    1046.5, 1174.66, 1318.51, 1567.98, 1760.0, // C6 D6 E6 G6 A6
+    130.81,
+    146.83,
+    164.81,
+    196.0,
+    220.0, // C3 D3 E3 G3 A3
+    261.63,
+    293.66,
+    329.63,
+    392.0,
+    440.0, // C4 D4 E4 G4 A4
+    523.25,
+    587.33,
+    659.25,
+    783.99,
+    880.0, // C5 D5 E5 G5 A5
+    1046.5,
+    1174.66,
+    1318.51,
+    1567.98,
+    1760.0, // C6 D6 E6 G6 A6
   ];
   // 0 = low C3. The bar patterns use 0..14 (4 octaves of pentatonic).
 
@@ -38,9 +54,30 @@
   function note12(name) {
     // a3 = 220
     const N = {
-      A2: 110, B2: 123.47, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.0, A3: 220.0,
-      B3: 246.94, C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0, B4: 493.88,
-      C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.0, B5: 987.77, C6: 1046.5,
+      A2: 110,
+      B2: 123.47,
+      C3: 130.81,
+      D3: 146.83,
+      E3: 164.81,
+      F3: 174.61,
+      G3: 196.0,
+      A3: 220.0,
+      B3: 246.94,
+      C4: 261.63,
+      D4: 293.66,
+      E4: 329.63,
+      F4: 349.23,
+      G4: 392.0,
+      A4: 440.0,
+      B4: 493.88,
+      C5: 523.25,
+      D5: 587.33,
+      E5: 659.25,
+      F5: 698.46,
+      G5: 783.99,
+      A5: 880.0,
+      B5: 987.77,
+      C6: 1046.5,
     };
     return N[name];
   }
@@ -63,12 +100,15 @@
     const bin = atob(ZS.music.realMenu);
     const buf = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    return ctx.decodeAudioData(buf.buffer.slice(0)).then((b) => {
-      realBuffer = b;
-    }).catch(() => {
-      // bad data; the procedural menu carries on
-      realBuffer = null;
-    });
+    return ctx
+      .decodeAudioData(buf.buffer.slice(0))
+      .then((b) => {
+        realBuffer = b;
+      })
+      .catch(() => {
+        // bad data; the procedural menu carries on
+        realBuffer = null;
+      });
   }
 
   function init() {
@@ -134,7 +174,11 @@
     if (realSrc) {
       // already-stopped is the only known case here; if the buffer is in
       // a weird state the safest thing is to drop the source and continue
-      try { realSrc.stop(); } catch { realSrc = null; }
+      try {
+        realSrc.stop();
+      } catch {
+        realSrc = null;
+      }
       realSrc = null;
     }
     realSrc = ctx.createBufferSource();
@@ -241,7 +285,7 @@
   function hat(t, vol) {
     const buf = ctx.createBuffer(1, Math.max(1, (ctx.sampleRate * 0.04) | 0), ctx.sampleRate);
     const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const f = ctx.createBiquadFilter();
@@ -567,12 +611,15 @@
       // "once" tracks stop after their last bar
       if (track.def.once && track.bar >= track.def.bars.length) {
         const t = track;
-        setTimeout(() => {
-          if (track === t) {
-            track = null;
-            _applyBus();
-          }
-        }, (barD * 1.2) * 1000);
+        setTimeout(
+          () => {
+            if (track === t) {
+              track = null;
+              _applyBus();
+            }
+          },
+          barD * 1.2 * 1000,
+        );
         break;
       }
       // looped tracks wrap their bar index (and the bar array re-uses)

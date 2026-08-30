@@ -499,24 +499,8 @@
       // a glyph square — a single wline on the cloth (e.g. a 將 character mark)
       c.strokeStyle = INK_SOFT;
       c.lineWidth = 1.2;
-      ZS.wline(
-        c,
-        poleX - w * 0.5,
-        poleTop + 6 * k,
-        poleX - w * 0.5,
-        poleTop + 12 * k,
-        s + 35,
-        0.4,
-      );
-      ZS.wline(
-        c,
-        poleX - w * 0.7,
-        poleTop + 9 * k,
-        poleX - w * 0.3,
-        poleTop + 9 * k,
-        s + 36,
-        0.4,
-      );
+      ZS.wline(c, poleX - w * 0.5, poleTop + 6 * k, poleX - w * 0.5, poleTop + 12 * k, s + 35, 0.4);
+      ZS.wline(c, poleX - w * 0.7, poleTop + 9 * k, poleX - w * 0.3, poleTop + 9 * k, s + 36, 0.4);
     }
   }
 

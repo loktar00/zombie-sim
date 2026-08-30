@@ -37,14 +37,14 @@
 
   // the same palette the rest of the project uses
   const FACTIONS = [
-    [70, 96, 150],   // 0  blue    (Wu 吳)
-    [150, 54, 44],   // 1  red     (Wei 魏)
-    [64, 132, 74],   // 2  green   (Shu 蜀)
-    [150, 120, 60],  // 3  ochre   (Yuan 袁)
-    [120, 80, 140],  // 4  violet  (Lü 呂)
-    [60, 130, 130],  // 5  teal    (Liu Biao 劉表)
-    [120, 86, 60],   // 6  brown   (Liu Zhang 劉璋)
-    [96, 104, 120],  // 7  slate   (Ma 馬)
+    [70, 96, 150], // 0  blue    (Wu 吳)
+    [150, 54, 44], // 1  red     (Wei 魏)
+    [64, 132, 74], // 2  green   (Shu 蜀)
+    [150, 120, 60], // 3  ochre   (Yuan 袁)
+    [120, 80, 140], // 4  violet  (Lü 呂)
+    [60, 130, 130], // 5  teal    (Liu Biao 劉表)
+    [120, 86, 60], // 6  brown   (Liu Zhang 劉璋)
+    [96, 104, 120], // 7  slate   (Ma 馬)
   ];
   // Each entry in NAMED is a (r, g, b) tuple used as the cloth fill. The
   // catalogue is wider than the figure's 8-color ramp because the campaign
@@ -68,19 +68,19 @@
     liu_biao: FACTIONS[5],
     liu_zhang: FACTIONS[6],
     hua: [180, 90, 90],
-    zhang: [110, 100, 130],     // 張 — a dusty purple (Zhang family, generic)
-    wang: [160, 110, 80],       // 王 — a sandy brown
-    kong: [70, 110, 90],        // 孔 — a sage
-    yan: [150, 90, 60],         // 嚴 — a burnt orange (Yan family, distinct from Yan Liang)
-    han: [140, 130, 70],        // 韓 — an olive (Han Sui's family)
-    dong: [100, 30, 30],        // 董 — a dark crimson (Dong Zhuo)
+    zhang: [110, 100, 130], // 張 — a dusty purple (Zhang family, generic)
+    wang: [160, 110, 80], // 王 — a sandy brown
+    kong: [70, 110, 90], // 孔 — a sage
+    yan: [150, 90, 60], // 嚴 — a burnt orange (Yan family, distinct from Yan Liang)
+    han: [140, 130, 70], // 韓 — an olive (Han Sui's family)
+    dong: [100, 30, 30], // 董 — a dark crimson (Dong Zhuo)
 
     // — sub-faction variants (darker / differentiated) —
-    cao_alt: [120, 40, 35],     // Wei sub-factions (Xiahou, Cao Ren, etc.)
-    wu_alt: [50, 75, 130],      // Wu sub-factions (Zhou Yu, etc.)
-    yuan_alt: [120, 95, 45],    // Yuan sub-factions (Yan Liang, Wen Chou)
-    shu_alt: [40, 100, 60],     // Shu sub-factions (a darker green)
-    ma_alt: [80, 90, 110],      // Ma Chao (a different slate from Ma Teng)
+    cao_alt: [120, 40, 35], // Wei sub-factions (Xiahou, Cao Ren, etc.)
+    wu_alt: [50, 75, 130], // Wu sub-factions (Zhou Yu, etc.)
+    yuan_alt: [120, 95, 45], // Yuan sub-factions (Yan Liang, Wen Chou)
+    shu_alt: [40, 100, 60], // Shu sub-factions (a darker green)
+    ma_alt: [80, 90, 110], // Ma Chao (a different slate from Ma Teng)
 
     // — specific warlords (194 CE start + a few late entries) —
     ma_teng: [96, 104, 120],
@@ -90,8 +90,8 @@
     tao_qian: [180, 130, 90],
     zhang_miao: [110, 100, 130],
     zhang_yang: [100, 95, 125],
-    zhang_yan: [90, 85, 110],   // Black Mountain bandits — a darker purple
-    zhang_lu: [80, 60, 100],    // the Taoist of Hanzhong
+    zhang_yan: [90, 85, 110], // Black Mountain bandits — a darker purple
+    zhang_lu: [80, 60, 100], // the Taoist of Hanzhong
     wang_lang: [160, 100, 70],
     kong_rong: [70, 110, 90],
     liu_yao: [80, 130, 110],
@@ -103,16 +103,16 @@
     xiahou_yuan: [120, 40, 35],
     zhang_liao: [110, 50, 40],
     xu_chu: [130, 45, 35],
-    sima_yi: [60, 50, 50],       // Sima Yi — the charcoal schemer
+    sima_yi: [60, 50, 50], // Sima Yi — the charcoal schemer
     zhang_he: [115, 45, 40],
     xu_huang: [125, 50, 40],
     yu_jin: [115, 45, 40],
     le_jin: [120, 50, 40],
     cao_ren: [120, 40, 35],
     cao_hong: [120, 40, 35],
-    dian_wei: [50, 40, 40],      // the Madman — very dark
-    hua_xiong: [110, 35, 30],    // Hua Xiong — dark crimson
-    yan_liang: [120, 100, 50],   // Yuan's general
+    dian_wei: [50, 40, 40], // the Madman — very dark
+    hua_xiong: [110, 35, 30], // Hua Xiong — dark crimson
+    yan_liang: [120, 100, 50], // Yuan's general
     wen_chou: [110, 90, 45],
     // Wu
     zhou_yu: [50, 75, 130],
@@ -136,27 +136,27 @@
     jiang_wei: [60, 120, 70],
 
     // — the 13 Han provinces (state banners) —
-    yi:    FACTIONS[6],          // 益  — Liu Zhang's
-    jing:  FACTIONS[5],          // 荊  — Liu Biao's
-    liang: FACTIONS[7],          // 涼  — Ma's
-    ji:    FACTIONS[3],          // 冀  — Yuan's
-    yang:  [160, 110, 90],       // 揚  — sandy rose (a new one)
-    you:   [40, 80, 110],        // 幽  — Gongsun's
+    yi: FACTIONS[6], // 益  — Liu Zhang's
+    jing: FACTIONS[5], // 荊  — Liu Biao's
+    liang: FACTIONS[7], // 涼  — Ma's
+    ji: FACTIONS[3], // 冀  — Yuan's
+    yang: [160, 110, 90], // 揚  — sandy rose (a new one)
+    you: [40, 80, 110], // 幽  — Gongsun's
     yan_province: [140, 130, 70], // 兗  — olive (Cao's base)
-    xu:    [180, 130, 90],       // 徐  — tan (Tao Qian's)
-    yu:    [120, 100, 80],       // 豫  — neutral, contested
-    bing:  [90, 80, 70],         // 并  — dark
-    qing:  [70, 100, 90],        // 青  — dark teal
-    jiao:  [100, 60, 50],        // 交  — dark brown (southern)
-    si:    [110, 90, 60],        // 司  — medium brown (the central province)
-    lu:    [100, 100, 60],       // 魯  — dark olive (Confucius' homeland)
+    xu: [180, 130, 90], // 徐  — tan (Tao Qian's)
+    yu: [120, 100, 80], // 豫  — neutral, contested
+    bing: [90, 80, 70], // 并  — dark
+    qing: [70, 100, 90], // 青  — dark teal
+    jiao: [100, 60, 50], // 交  — dark brown (southern)
+    si: [110, 90, 60], // 司  — medium brown (the central province)
+    lu: [100, 100, 60], // 魯  — dark olive (Confucius' homeland)
 
     // — imperial + rebellion banners —
-    han_imperial: [200, 170, 50],  // 漢 — the imperial yellow
-    huang_jin:    [190, 150, 40],  // 黃巾 — mustard (the Yellow Turbans)
-    tian_gong:    [200, 170, 50],  // 天公 — same imperial yellow (Lord of Heaven)
-    yi_jiao:      [110, 50, 50],   // 義 — a dark crimson (righteous army generic)
-    zei:          [80, 60, 60],    // 賊 — a dirty grey (bandit generic)
+    han_imperial: [200, 170, 50], // 漢 — the imperial yellow
+    huang_jin: [190, 150, 40], // 黃巾 — mustard (the Yellow Turbans)
+    tian_gong: [200, 170, 50], // 天公 — same imperial yellow (Lord of Heaven)
+    yi_jiao: [110, 50, 50], // 義 — a dark crimson (righteous army generic)
+    zei: [80, 60, 60], // 賊 — a dirty grey (bandit generic)
   };
   function wash(rgb, a) {
     if (!rgb) return "rgba(0,0,0,0)";
@@ -460,7 +460,15 @@
       // a subtle outline so the character reads against the wash
       c.strokeStyle = INK_SOFT;
       c.lineWidth = 0.7;
-      ZS.wline(c, x + w / 2 - size * 0.25, y + h * 0.78, x + w / 2 + size * 0.25, y + h * 0.78, seed + 9, 0.3);
+      ZS.wline(
+        c,
+        x + w / 2 - size * 0.25,
+        y + h * 0.78,
+        x + w / 2 + size * 0.25,
+        y + h * 0.78,
+        seed + 9,
+        0.3,
+      );
       return;
     }
 
@@ -519,14 +527,14 @@
    *   `warlord`   — specific warlord personal flags (備 / 操 / 權 ...)
    */
   const CHROME = {
-    plain:     { shape: "rect",       border: "thin",    pole: true,  tassels: 0 },
-    banner:    { shape: "rect",       border: "thin",    pole: true,  tassels: 2 },
-    shield:    { shape: "shield",     border: "double",  pole: false, tassels: 0 },
-    great:     { shape: "swallowtail",border: "double",  pole: true,  tassels: 2 },
-    seal:      { shape: "square",     border: "thin",    pole: false, tassels: 0 },
-    round:     { shape: "round",      border: "thin",    pole: true,  tassels: 0 },
-    pennant:   { shape: "pennant",    border: "none",    pole: true,  tassels: 0 },
-    diamond:   { shape: "diamond",    border: "thin",    pole: false, tassels: 0 },
+    plain: { shape: "rect", border: "thin", pole: true, tassels: 0 },
+    banner: { shape: "rect", border: "thin", pole: true, tassels: 2 },
+    shield: { shape: "shield", border: "double", pole: false, tassels: 0 },
+    great: { shape: "swallowtail", border: "double", pole: true, tassels: 2 },
+    seal: { shape: "square", border: "thin", pole: false, tassels: 0 },
+    round: { shape: "round", border: "thin", pole: true, tassels: 0 },
+    pennant: { shape: "pennant", border: "none", pole: true, tassels: 0 },
+    diamond: { shape: "diamond", border: "thin", pole: false, tassels: 0 },
   };
   // a chrome always needs a color — defaulted below per-preset.
 
@@ -540,116 +548,116 @@
   // the canonical 3 states
   const PRESETS = {
     // — the 3 kingdoms (state name) —
-    shu:    _mk("蜀", NAMED.shu,   "great"),
-    wei:    _mk("魏", NAMED.wei,   "great"),
-    wu:     _mk("吳", NAMED.wu,    "great"),
+    shu: _mk("蜀", NAMED.shu, "great"),
+    wei: _mk("魏", NAMED.wei, "great"),
+    wu: _mk("吳", NAMED.wu, "great"),
 
     // — major families (single surname character) —
-    liu:    _mk("劉", NAMED.liu,   "banner"),
-    cao:    _mk("曹", NAMED.cao,   "banner"),
-    sun:    _mk("孫", NAMED.sun,   "banner"),
-    yuan:   _mk("袁", NAMED.yuan,  "banner"),
-    lv:     _mk("呂", NAMED.lv,    "shield"),
-    ma:     _mk("馬", NAMED.ma,    "pennant"),
-    gongsun:_mk("公", NAMED.gongsun,"plain"),
-    tao:    _mk("陶", NAMED.tao,   "plain"),
-    hua:    _mk("華", NAMED.hua,   "seal"),
-    zhang:  _mk("張", NAMED.zhang, "plain"),
-    wang:   _mk("王", NAMED.wang,  "plain"),
-    kong:   _mk("孔", NAMED.kong,  "plain"),
-    yan_f:  _mk("嚴", NAMED.yan,   "plain"),
-    han_f:  _mk("韓", NAMED.han,   "plain"),
-    dong:   _mk("董", NAMED.dong,  "shield"),
+    liu: _mk("劉", NAMED.liu, "banner"),
+    cao: _mk("曹", NAMED.cao, "banner"),
+    sun: _mk("孫", NAMED.sun, "banner"),
+    yuan: _mk("袁", NAMED.yuan, "banner"),
+    lv: _mk("呂", NAMED.lv, "shield"),
+    ma: _mk("馬", NAMED.ma, "pennant"),
+    gongsun: _mk("公", NAMED.gongsun, "plain"),
+    tao: _mk("陶", NAMED.tao, "plain"),
+    hua: _mk("華", NAMED.hua, "seal"),
+    zhang: _mk("張", NAMED.zhang, "plain"),
+    wang: _mk("王", NAMED.wang, "plain"),
+    kong: _mk("孔", NAMED.kong, "plain"),
+    yan_f: _mk("嚴", NAMED.yan, "plain"),
+    han_f: _mk("韓", NAMED.han, "plain"),
+    dong: _mk("董", NAMED.dong, "shield"),
 
     // — the 194 CE warlord roster (personal flags, second char) —
-    liu_bei:    _mk("備", NAMED.liu,   "shield"),
-    cao_cao:    _mk("操", NAMED.cao,   "shield"),
-    sun_quan:   _mk("權", NAMED.sun,   "shield"),
-    sun_ce:     _mk("策", NAMED.sun,   "shield"),
-    yuan_shao:  _mk("紹", NAMED.yuan,  "shield"),
-    yuan_shu:   _mk("術", NAMED.yuan,  "shield"),
-    lv_bu:      _mk("布", NAMED.lv,    "round"),
-    ma_chao:    _mk("超", NAMED.ma_alt,"pennant"),
-    ma_teng:    _mk("騰", NAMED.ma_teng,"pennant"),
-    han_sui:    _mk("遂", NAMED.han_sui,"plain"),
-    gongsun_zan:_mk("瓚", NAMED.gongsun_zan,"plain"),
-    gongsun_du: _mk("度", NAMED.gongsun_du,"plain"),
-    tao_qian:   _mk("謙", NAMED.tao,   "plain"),
-    zhang_miao: _mk("邈", NAMED.zhang_miao,"plain"),
-    zhang_yang: _mk("楊", NAMED.zhang_yang,"plain"),
-    zhang_yan:  _mk("燕", NAMED.zhang_yan,"shield"),
-    zhang_lu:   _mk("魯", NAMED.zhang_lu,"plain"),
-    wang_lang:  _mk("朗", NAMED.wang_lang,"plain"),
-    kong_rong:  _mk("融", NAMED.kong_rong,"plain"),
-    liu_yao:    _mk("繇", NAMED.liu_yao,"plain"),
-    yan_baihu:  _mk("虎", NAMED.yan_baihu,"shield"),
+    liu_bei: _mk("備", NAMED.liu, "shield"),
+    cao_cao: _mk("操", NAMED.cao, "shield"),
+    sun_quan: _mk("權", NAMED.sun, "shield"),
+    sun_ce: _mk("策", NAMED.sun, "shield"),
+    yuan_shao: _mk("紹", NAMED.yuan, "shield"),
+    yuan_shu: _mk("術", NAMED.yuan, "shield"),
+    lv_bu: _mk("布", NAMED.lv, "round"),
+    ma_chao: _mk("超", NAMED.ma_alt, "pennant"),
+    ma_teng: _mk("騰", NAMED.ma_teng, "pennant"),
+    han_sui: _mk("遂", NAMED.han_sui, "plain"),
+    gongsun_zan: _mk("瓚", NAMED.gongsun_zan, "plain"),
+    gongsun_du: _mk("度", NAMED.gongsun_du, "plain"),
+    tao_qian: _mk("謙", NAMED.tao, "plain"),
+    zhang_miao: _mk("邈", NAMED.zhang_miao, "plain"),
+    zhang_yang: _mk("楊", NAMED.zhang_yang, "plain"),
+    zhang_yan: _mk("燕", NAMED.zhang_yan, "shield"),
+    zhang_lu: _mk("魯", NAMED.zhang_lu, "plain"),
+    wang_lang: _mk("朗", NAMED.wang_lang, "plain"),
+    kong_rong: _mk("融", NAMED.kong_rong, "plain"),
+    liu_yao: _mk("繇", NAMED.liu_yao, "plain"),
+    yan_baihu: _mk("虎", NAMED.yan_baihu, "shield"),
 
     // — the Wei general roster —
-    xiahou_dun:  _mk("惇", NAMED.xiahou_dun, "shield"),
-    xiahou_yuan: _mk("淵", NAMED.xiahou_yuan,"shield"),
-    zhang_liao:  _mk("遼", NAMED.zhang_liao, "shield"),
-    xu_chu:      _mk("褚", NAMED.xu_chu,     "shield"),
-    sima_yi:     _mk("懿", NAMED.sima_yi,    "shield"),
-    zhang_he:    _mk("郃", NAMED.zhang_he,   "shield"),
-    xu_huang:    _mk("晃", NAMED.xu_huang,   "shield"),
-    yu_jin:      _mk("禁", NAMED.yu_jin,     "shield"),
-    le_jin:      _mk("進", NAMED.le_jin,     "shield"),
-    cao_ren:     _mk("仁", NAMED.cao_ren,    "shield"),
-    cao_hong:    _mk("洪", NAMED.cao_hong,   "shield"),
-    dian_wei:    _mk("韋", NAMED.dian_wei,   "round"),
-    hua_xiong:   _mk("雄", NAMED.hua_xiong,  "shield"),
-    yan_liang:   _mk("良", NAMED.yan_liang,  "shield"),
-    wen_chou:    _mk("醜", NAMED.wen_chou,   "shield"),
+    xiahou_dun: _mk("惇", NAMED.xiahou_dun, "shield"),
+    xiahou_yuan: _mk("淵", NAMED.xiahou_yuan, "shield"),
+    zhang_liao: _mk("遼", NAMED.zhang_liao, "shield"),
+    xu_chu: _mk("褚", NAMED.xu_chu, "shield"),
+    sima_yi: _mk("懿", NAMED.sima_yi, "shield"),
+    zhang_he: _mk("郃", NAMED.zhang_he, "shield"),
+    xu_huang: _mk("晃", NAMED.xu_huang, "shield"),
+    yu_jin: _mk("禁", NAMED.yu_jin, "shield"),
+    le_jin: _mk("進", NAMED.le_jin, "shield"),
+    cao_ren: _mk("仁", NAMED.cao_ren, "shield"),
+    cao_hong: _mk("洪", NAMED.cao_hong, "shield"),
+    dian_wei: _mk("韋", NAMED.dian_wei, "round"),
+    hua_xiong: _mk("雄", NAMED.hua_xiong, "shield"),
+    yan_liang: _mk("良", NAMED.yan_liang, "shield"),
+    wen_chou: _mk("醜", NAMED.wen_chou, "shield"),
 
     // — the Wu general roster —
-    zhou_yu:     _mk("瑜", NAMED.zhou_yu,    "shield"),
-    lu_su:       _mk("肅", NAMED.lu_su,      "shield"),
-    lv_meng:     _mk("蒙", NAMED.lv_meng,    "shield"),
-    gan_ning:    _mk("寧", NAMED.gan_ning,   "shield"),
-    taishi_ci:   _mk("慈", NAMED.taishi_ci,  "shield"),
-    cheng_pu:    _mk("普", NAMED.cheng_pu,   "shield"),
-    huang_gai:   _mk("蓋", NAMED.huang_gai,  "shield"),
-    lu_xun:      _mk("遜", NAMED.lu_xun,     "shield"),
+    zhou_yu: _mk("瑜", NAMED.zhou_yu, "shield"),
+    lu_su: _mk("肅", NAMED.lu_su, "shield"),
+    lv_meng: _mk("蒙", NAMED.lv_meng, "shield"),
+    gan_ning: _mk("寧", NAMED.gan_ning, "shield"),
+    taishi_ci: _mk("慈", NAMED.taishi_ci, "shield"),
+    cheng_pu: _mk("普", NAMED.cheng_pu, "shield"),
+    huang_gai: _mk("蓋", NAMED.huang_gai, "shield"),
+    lu_xun: _mk("遜", NAMED.lu_xun, "shield"),
 
     // — the Shu general roster —
-    guan_yu:     _mk("羽", NAMED.guan_yu,    "shield"),
-    zhang_fei:   _mk("飛", NAMED.zhang_fei,  "shield"),
-    zhao_yun:    _mk("雲", NAMED.zhao_yun,   "shield"),
-    huang_zhong: _mk("忠", NAMED.huang_zhong,"shield"),
-    fa_zheng:    _mk("正", NAMED.fa_zheng,   "shield"),
-    wei_yan:     _mk("延", NAMED.wei_yan,    "shield"),
-    pang_tong:   _mk("統", NAMED.pang_tong,  "shield"),
-    xu_shu:      _mk("庶", NAMED.xu_shu,     "shield"),
-    zhuge_liang: _mk("亮", NAMED.zhuge_liang,"shield"),
-    jiang_wei:   _mk("維", NAMED.jiang_wei,  "shield"),
+    guan_yu: _mk("羽", NAMED.guan_yu, "shield"),
+    zhang_fei: _mk("飛", NAMED.zhang_fei, "shield"),
+    zhao_yun: _mk("雲", NAMED.zhao_yun, "shield"),
+    huang_zhong: _mk("忠", NAMED.huang_zhong, "shield"),
+    fa_zheng: _mk("正", NAMED.fa_zheng, "shield"),
+    wei_yan: _mk("延", NAMED.wei_yan, "shield"),
+    pang_tong: _mk("統", NAMED.pang_tong, "shield"),
+    xu_shu: _mk("庶", NAMED.xu_shu, "shield"),
+    zhuge_liang: _mk("亮", NAMED.zhuge_liang, "shield"),
+    jiang_wei: _mk("維", NAMED.jiang_wei, "shield"),
 
     // — the 13 Han provinces (state banners) —
-    yi:    _mk("益", NAMED.yi,   "banner"),
-    jing:  _mk("荊", NAMED.jing, "banner"),
-    liang: _mk("涼", NAMED.liang,"pennant"),
-    ji:    _mk("冀", NAMED.ji,   "banner"),
-    yang:  _mk("揚", NAMED.yang, "banner"),
-    you:   _mk("幽", NAMED.you,  "plain"),
-    yan:   _mk("兗", NAMED.yan_province,  "banner"),
-    xu:    _mk("徐", NAMED.xu,   "banner"),
-    yu:    _mk("豫", NAMED.yu,   "banner"),
-    bing:  _mk("并", NAMED.bing, "plain"),
-    qing:  _mk("青", NAMED.qing, "plain"),
-    jiao:  _mk("交", NAMED.jiao, "plain"),
-    si:    _mk("司", NAMED.si,   "seal"),
+    yi: _mk("益", NAMED.yi, "banner"),
+    jing: _mk("荊", NAMED.jing, "banner"),
+    liang: _mk("涼", NAMED.liang, "pennant"),
+    ji: _mk("冀", NAMED.ji, "banner"),
+    yang: _mk("揚", NAMED.yang, "banner"),
+    you: _mk("幽", NAMED.you, "plain"),
+    yan: _mk("兗", NAMED.yan_province, "banner"),
+    xu: _mk("徐", NAMED.xu, "banner"),
+    yu: _mk("豫", NAMED.yu, "banner"),
+    bing: _mk("并", NAMED.bing, "plain"),
+    qing: _mk("青", NAMED.qing, "plain"),
+    jiao: _mk("交", NAMED.jiao, "plain"),
+    si: _mk("司", NAMED.si, "seal"),
 
     // — imperial + rebellion banners —
     han_imperial: _mk("漢", NAMED.han_imperial, "great"),
-    huang_jin:    _mk("巾", NAMED.huang_jin,    "pennant"),
-    tian_gong:    _mk("天", NAMED.tian_gong,    "pennant"),
-    yi_jiao:      _mk("義", NAMED.yi_jiao,      "plain"),
-    zei:          _mk("賊", NAMED.zei,          "plain"),
+    huang_jin: _mk("巾", NAMED.huang_jin, "pennant"),
+    tian_gong: _mk("天", NAMED.tian_gong, "pennant"),
+    yi_jiao: _mk("義", NAMED.yi_jiao, "plain"),
+    zei: _mk("賊", NAMED.zei, "plain"),
 
     // — cross-overs: same chrome, different text (useful presets) —
-    shu_liu:    _mk("蜀", NAMED.liu,   "banner"),
-    wei_cao:    _mk("魏", NAMED.cao,   "banner"),
-    wu_sun:     _mk("吳", NAMED.sun,   "banner"),
-    liu_empire: _mk("漢", NAMED.liu,   "great"),  // Liu Bei claiming the Han
+    shu_liu: _mk("蜀", NAMED.liu, "banner"),
+    wei_cao: _mk("魏", NAMED.cao, "banner"),
+    wu_sun: _mk("吳", NAMED.sun, "banner"),
+    liu_empire: _mk("漢", NAMED.liu, "great"), // Liu Bei claiming the Han
   };
 
   // quick lookup: faction name -> preset
@@ -666,15 +674,24 @@
    */
   function forFaction(factionId) {
     switch (factionId | 0) {
-      case 0: return PRESETS.wu;
-      case 1: return PRESETS.wei;
-      case 2: return PRESETS.shu;
-      case 3: return PRESETS.yuan;
-      case 4: return PRESETS.lv;
-      case 5: return PRESETS.liu_biao;
-      case 6: return PRESETS.liu_zhang;
-      case 7: return PRESETS.ma;
-      default: return PRESETS.shu;
+      case 0:
+        return PRESETS.wu;
+      case 1:
+        return PRESETS.wei;
+      case 2:
+        return PRESETS.shu;
+      case 3:
+        return PRESETS.yuan;
+      case 4:
+        return PRESETS.lv;
+      case 5:
+        return PRESETS.liu_biao;
+      case 6:
+        return PRESETS.liu_zhang;
+      case 7:
+        return PRESETS.ma;
+      default:
+        return PRESETS.shu;
     }
   }
 
@@ -738,17 +755,26 @@
   function bearer(flag, x, y, opts) {
     const o = opts || {};
     return {
-      x: x, y: y,
-      vx: 0, vy: 0,
+      x: x,
+      y: y,
+      vx: 0,
+      vy: 0,
       type: 8, // STANDARD (ZS.figure.STANDARD)
       tier: typeof o.tier === "number" ? o.tier : 1, // NCO by default
       faction: typeof o.faction === "number" ? o.faction : 0,
       flag: flag,
       seed: typeof o.seed === "number" ? o.seed : Math.random() * 99 + 1,
-      a: 0, gait: 0,
-      hp: 8, atk: 0, hit: 0, thr: 0,
-      flash: 0, flee: 0,
-      free: false, gone: false, dead: false,
+      a: 0,
+      gait: 0,
+      hp: 8,
+      atk: 0,
+      hit: 0,
+      thr: 0,
+      flash: 0,
+      flee: 0,
+      free: false,
+      gone: false,
+      dead: false,
       // `team` lets the scenario bucket bearers to a side
       team: typeof o.team === "number" ? o.team : 0,
     };

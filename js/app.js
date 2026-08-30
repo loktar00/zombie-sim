@@ -178,7 +178,7 @@
       if (next.enter) next.enter(payload);
       // Music follows the view: each view declares its own soundtrack.
       if (ZS.music) {
-        const track = (next.music || (this.view && this.view.music)) || null;
+        const track = next.music || (this.view && this.view.music) || null;
         if (track) ZS.music.play(track);
         else ZS.music.stop();
       }

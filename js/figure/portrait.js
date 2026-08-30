@@ -29,8 +29,14 @@
 
   // mirror of ZS.figure.FACTIONS so the module is self-sufficient
   const FACTIONS = [
-    [70, 96, 150], [150, 54, 44], [64, 132, 74], [150, 120, 60],
-    [120, 80, 140], [60, 130, 130], [120, 86, 60], [96, 104, 120],
+    [70, 96, 150],
+    [150, 54, 44],
+    [64, 132, 74],
+    [150, 120, 60],
+    [120, 80, 140],
+    [60, 130, 130],
+    [120, 86, 60],
+    [96, 104, 120],
   ];
   function wash(i, a) {
     const c = FACTIONS[i % FACTIONS.length];
@@ -65,24 +71,44 @@
       // texture lines
       for (let i = 0; i < 5; i++) {
         const yy = y + r * (0.5 + i * 0.18);
-        ZS.wline(c, x - r * 0.55, yy, x + r * 0.55, yy + ZS.sjit(seed + i) * 0.6, seed + 10 + i, 0.5);
+        ZS.wline(
+          c,
+          x - r * 0.55,
+          yy,
+          x + r * 0.55,
+          yy + ZS.sjit(seed + i) * 0.6,
+          seed + 10 + i,
+          0.5,
+        );
       }
     } else if (type === "chin") {
       // shorter, scholarly
-      ZS.wpoly(c, [
-        { x: x - r * 0.45, y: y + r * 0.3 },
-        { x: x - r * 0.3, y: y + r * 0.75 },
-        { x: x, y: y + r * 0.85 },
-        { x: x + r * 0.3, y: y + r * 0.75 },
-        { x: x + r * 0.45, y: y + r * 0.3 },
-      ], seed, 0.6, true);
+      ZS.wpoly(
+        c,
+        [
+          { x: x - r * 0.45, y: y + r * 0.3 },
+          { x: x - r * 0.3, y: y + r * 0.75 },
+          { x: x, y: y + r * 0.85 },
+          { x: x + r * 0.3, y: y + r * 0.75 },
+          { x: x + r * 0.45, y: y + r * 0.3 },
+        ],
+        seed,
+        0.6,
+        true,
+      );
     } else if (type === "goatee") {
       // a small tuft
-      ZS.wpoly(c, [
-        { x: x - r * 0.25, y: y + r * 0.55 },
-        { x: x, y: y + r * 0.85 },
-        { x: x + r * 0.25, y: y + r * 0.55 },
-      ], seed, 0.5, true);
+      ZS.wpoly(
+        c,
+        [
+          { x: x - r * 0.25, y: y + r * 0.55 },
+          { x: x, y: y + r * 0.85 },
+          { x: x + r * 0.25, y: y + r * 0.55 },
+        ],
+        seed,
+        0.5,
+        true,
+      );
     } else if (type === "moustache") {
       // a sweeping one (Cao Cao style)
       ZS.wline(c, x - r * 0.35, y + r * 0.2, x - r * 0.55, y + r * 0.35, seed, 0.4);
@@ -97,13 +123,19 @@
     c.lineWidth = 1.5;
     if (type === "turban") {
       // the wraparound cloth cap (most common)
-      ZS.wpoly(c, [
-        { x: x - r * 0.95, y: y - r * 0.3 },
-        { x: x - r * 0.7, y: y - r * 0.85 },
-        { x: x, y: y - r * 1.05 },
-        { x: x + r * 0.7, y: y - r * 0.85 },
-        { x: x + r * 0.95, y: y - r * 0.3 },
-      ], seed, 0.7, true);
+      ZS.wpoly(
+        c,
+        [
+          { x: x - r * 0.95, y: y - r * 0.3 },
+          { x: x - r * 0.7, y: y - r * 0.85 },
+          { x: x, y: y - r * 1.05 },
+          { x: x + r * 0.7, y: y - r * 0.85 },
+          { x: x + r * 0.95, y: y - r * 0.3 },
+        ],
+        seed,
+        0.7,
+        true,
+      );
       // the wrap detail
       ZS.wline(c, x - r * 0.6, y - r * 0.55, x + r * 0.6, y - r * 0.5, seed + 9, 0.5);
     } else if (type === "crown") {
@@ -113,21 +145,33 @@
       ZS.wline(c, x + r, y - r * 0.35, x + r, top, seed + 1, 0.6);
       ZS.wline(c, x - r, top, x + r, top, seed + 2, 0.6);
       // a small bump in the middle
-      ZS.wpoly(c, [
-        { x: x - r * 0.4, y: top },
-        { x: x, y: top - r * 0.25 },
-        { x: x + r * 0.4, y: top },
-      ], seed + 3, 0.5, true);
+      ZS.wpoly(
+        c,
+        [
+          { x: x - r * 0.4, y: top },
+          { x: x, y: top - r * 0.25 },
+          { x: x + r * 0.4, y: top },
+        ],
+        seed + 3,
+        0.5,
+        true,
+      );
     } else if (type === "helmet") {
       // a dome helmet with side flaps (戰盔)
       const top = y - r * 1.05;
-      ZS.wpoly(c, [
-        { x: x - r * 0.95, y: y - r * 0.1 },
-        { x: x - r * 0.7, y: y - r * 0.7 },
-        { x: x, y: top },
-        { x: x + r * 0.7, y: y - r * 0.7 },
-        { x: x + r * 0.95, y: y - r * 0.1 },
-      ], seed, 0.7, true);
+      ZS.wpoly(
+        c,
+        [
+          { x: x - r * 0.95, y: y - r * 0.1 },
+          { x: x - r * 0.7, y: y - r * 0.7 },
+          { x: x, y: top },
+          { x: x + r * 0.7, y: y - r * 0.7 },
+          { x: x + r * 0.95, y: y - r * 0.1 },
+        ],
+        seed,
+        0.7,
+        true,
+      );
       // a red tassel on top
       c.strokeStyle = "rgba(150,54,44,0.7)";
       c.lineWidth = 1.4;
@@ -176,11 +220,17 @@
     ZS.wline(c, x - r * 2.4, y + r * 3.0, x - r * 0.6, y + r * 1.6, seed, 1);
     ZS.wline(c, x + r * 2.4, y + r * 3.0, x + r * 0.6, y + r * 1.6, seed + 1, 1);
     // the collar: a small V
-    ZS.wpoly(c, [
-      { x: x - r * 0.55, y: y + r * 1.6 },
-      { x: x, y: y + r * 2.1 },
-      { x: x + r * 0.55, y: y + r * 1.6 },
-    ], seed + 2, 0.5, true);
+    ZS.wpoly(
+      c,
+      [
+        { x: x - r * 0.55, y: y + r * 1.6 },
+        { x: x, y: y + r * 2.1 },
+        { x: x + r * 0.55, y: y + r * 1.6 },
+      ],
+      seed + 2,
+      0.5,
+      true,
+    );
     // the faction sash across the chest (the read)
     c.strokeStyle = wash(faction, 0.75);
     c.lineWidth = 4.5;
@@ -205,170 +255,239 @@
   const CATALOGUE = {
     /* Shu-Han (劉備 faction) */
     liu_bei: {
-      name: { "zh-tw": "劉備", "en": "Liu Bei" },
-      style: { "zh-tw": "玄德", "en": "Xuande" },
+      name: { "zh-tw": "劉備", en: "Liu Bei" },
+      style: { "zh-tw": "玄德", en: "Xuande" },
       faction: 2, // green
-      wu: 75, tong: 90, zhi: 76, zheng: 85,
+      wu: 75,
+      tong: 90,
+      zhi: 76,
+      zheng: 85,
       portrait: { cap: "turban", beard: "chin", cue: "kind" },
     },
     guan_yu: {
-      name: { "zh-tw": "關羽", "en": "Guan Yu" },
-      style: { "zh-tw": "雲長", "en": "Yunchang" },
+      name: { "zh-tw": "關羽", en: "Guan Yu" },
+      style: { "zh-tw": "雲長", en: "Yunchang" },
       faction: 2,
-      wu: 97, tong: 95, zhi: 75, zheng: 62,
+      wu: 97,
+      tong: 95,
+      zhi: 75,
+      zheng: 62,
       portrait: { cap: "turban", beard: "long", cue: "stern" },
     },
     zhang_fei: {
-      name: { "zh-tw": "張飛", "en": "Zhang Fei" },
-      style: { "zh-tw": "翼德", "en": "Yide" },
+      name: { "zh-tw": "張飛", en: "Zhang Fei" },
+      style: { "zh-tw": "翼德", en: "Yide" },
       faction: 2,
-      wu: 96, tong: 88, zhi: 40, zheng: 50,
+      wu: 96,
+      tong: 88,
+      zhi: 40,
+      zheng: 50,
       portrait: { cap: "turban", beard: "long", cue: "angry" },
     },
     zhao_yun: {
-      name: { "zh-tw": "趙雲", "en": "Zhao Yun" },
-      style: { "zh-tw": "子龍", "en": "Zilong" },
+      name: { "zh-tw": "趙雲", en: "Zhao Yun" },
+      style: { "zh-tw": "子龍", en: "Zilong" },
       faction: 2,
-      wu: 96, tong: 92, zhi: 76, zheng: 65,
+      wu: 96,
+      tong: 92,
+      zhi: 76,
+      zheng: 65,
       portrait: { cap: "helmet", beard: "chin", cue: "calm" },
     },
     ma_chao: {
-      name: { "zh-tw": "馬超", "en": "Ma Chao" },
-      style: { "zh-tw": "孟起", "en": "Mengqi" },
+      name: { "zh-tw": "馬超", en: "Ma Chao" },
+      style: { "zh-tw": "孟起", en: "Mengqi" },
       faction: 2,
-      wu: 95, tong: 88, zhi: 60, zheng: 50,
+      wu: 95,
+      tong: 88,
+      zhi: 60,
+      zheng: 50,
       portrait: { cap: "helmet", beard: "moustache", cue: "proud" },
     },
     huang_zhong: {
-      name: { "zh-tw": "黃忠", "en": "Huang Zhong" },
-      style: { "zh-tw": "漢升", "en": "Hansheng" },
+      name: { "zh-tw": "黃忠", en: "Huang Zhong" },
+      style: { "zh-tw": "漢升", en: "Hansheng" },
       faction: 2,
-      wu: 92, tong: 80, zhi: 60, zheng: 55,
+      wu: 92,
+      tong: 80,
+      zhi: 60,
+      zheng: 55,
       portrait: { cap: "helmet", beard: "long", cue: "aged" },
     },
     fa_zheng: {
-      name: { "zh-tw": "法正", "en": "Fa Zheng" },
-      style: { "zh-tw": "孝直", "en": "Xiaozhi" },
+      name: { "zh-tw": "法正", en: "Fa Zheng" },
+      style: { "zh-tw": "孝直", en: "Xiaozhi" },
       faction: 2,
-      wu: 35, tong: 70, zhi: 95, zheng: 80,
+      wu: 35,
+      tong: 70,
+      zhi: 95,
+      zheng: 80,
       portrait: { cap: "crown", beard: "chin", cue: "clever" },
     },
 
     /* Wei (曹操 faction) */
     cao_cao: {
-      name: { "zh-tw": "曹操", "en": "Cao Cao" },
-      style: { "zh-tw": "孟德", "en": "Mengde" },
+      name: { "zh-tw": "曹操", en: "Cao Cao" },
+      style: { "zh-tw": "孟德", en: "Mengde" },
       faction: 1, // red
-      wu: 78, tong: 96, zhi: 96, zheng: 92,
+      wu: 78,
+      tong: 96,
+      zhi: 96,
+      zheng: 92,
       portrait: { cap: "crown", beard: "moustache", cue: "scheming" },
     },
     xiahou_dun: {
-      name: { "zh-tw": "夏侯惇", "en": "Xiahou Dun" },
-      style: { "zh-tw": "元讓", "en": "Yuanrang" },
+      name: { "zh-tw": "夏侯惇", en: "Xiahou Dun" },
+      style: { "zh-tw": "元讓", en: "Yuanrang" },
       faction: 1,
-      wu: 92, tong: 90, zhi: 55, zheng: 70,
+      wu: 92,
+      tong: 90,
+      zhi: 55,
+      zheng: 70,
       portrait: { cap: "helmet", beard: "moustache", cue: "fierce" },
     },
     xiahou_yuan: {
-      name: { "zh-tw": "夏侯淵", "en": "Xiahou Yuan" },
-      style: { "zh-tw": "妙才", "en": "Miaocai" },
+      name: { "zh-tw": "夏侯淵", en: "Xiahou Yuan" },
+      style: { "zh-tw": "妙才", en: "Miaocai" },
       faction: 1,
-      wu: 90, tong: 88, zhi: 60, zheng: 60,
+      wu: 90,
+      tong: 88,
+      zhi: 60,
+      zheng: 60,
       portrait: { cap: "helmet", beard: "moustache", cue: "stern" },
     },
     zhang_liao: {
-      name: { "zh-tw": "張遼", "en": "Zhang Liao" },
-      style: { "zh-tw": "文遠", "en": "Wenyuan" },
+      name: { "zh-tw": "張遼", en: "Zhang Liao" },
+      style: { "zh-tw": "文遠", en: "Wenyuan" },
       faction: 1,
-      wu: 94, tong: 90, zhi: 75, zheng: 65,
+      wu: 94,
+      tong: 90,
+      zhi: 75,
+      zheng: 65,
       portrait: { cap: "helmet", beard: "moustache", cue: "calm" },
     },
     xu_chu: {
-      name: { "zh-tw": "許褚", "en": "Xu Chu" },
-      style: { "zh-tw": "仲康", "en": "Zhongkang" },
+      name: { "zh-tw": "許褚", en: "Xu Chu" },
+      style: { "zh-tw": "仲康", en: "Zhongkang" },
       faction: 1,
-      wu: 96, tong: 80, zhi: 30, zheng: 40,
+      wu: 96,
+      tong: 80,
+      zhi: 30,
+      zheng: 40,
       portrait: { cap: "turban", beard: "moustache", cue: "fierce" },
     },
     zhou_yu: {
-      name: { "zh-tw": "周瑜", "en": "Zhou Yu" },
-      style: { "zh-tw": "公瑾", "en": "Gongjin" },
+      name: { "zh-tw": "周瑜", en: "Zhou Yu" },
+      style: { "zh-tw": "公瑾", en: "Gongjin" },
       faction: 1,
-      wu: 80, tong: 92, zhi: 96, zheng: 75,
+      wu: 80,
+      tong: 92,
+      zhi: 96,
+      zheng: 75,
       portrait: { cap: "crown", beard: "moustache", cue: "clever" },
     },
     sima_yi: {
-      name: { "zh-tw": "司馬懿", "en": "Sima Yi" },
-      style: { "zh-tw": "仲達", "en": "Zhongda" },
+      name: { "zh-tw": "司馬懿", en: "Sima Yi" },
+      style: { "zh-tw": "仲達", en: "Zhongda" },
       faction: 1,
-      wu: 70, tong: 90, zhi: 98, zheng: 88,
+      wu: 70,
+      tong: 90,
+      zhi: 98,
+      zheng: 88,
       portrait: { cap: "crown", beard: "long", cue: "scheming" },
     },
 
     /* Wu (孫權 faction) */
     sun_quan: {
-      name: { "zh-tw": "孫權", "en": "Sun Quan" },
-      style: { "zh-tw": "仲謀", "en": "Zhongmou" },
+      name: { "zh-tw": "孫權", en: "Sun Quan" },
+      style: { "zh-tw": "仲謀", en: "Zhongmou" },
       faction: 0, // blue
-      wu: 70, tong: 88, zhi: 88, zheng: 90,
+      wu: 70,
+      tong: 88,
+      zhi: 88,
+      zheng: 90,
       portrait: { cap: "crown", beard: "moustache", cue: "regal" },
     },
     sun_ce: {
-      name: { "zh-tw": "孫策", "en": "Sun Ce" },
-      style: { "zh-tw": "伯符", "en": "Bofu" },
+      name: { "zh-tw": "孫策", en: "Sun Ce" },
+      style: { "zh-tw": "伯符", en: "Bofu" },
       faction: 0,
-      wu: 92, tong: 85, zhi: 65, zheng: 60,
+      wu: 92,
+      tong: 85,
+      zhi: 65,
+      zheng: 60,
       portrait: { cap: "crown", beard: "moustache", cue: "bold" },
     },
     zhou_tai: {
-      name: { "zh-tw": "周泰", "en": "Zhou Tai" },
-      style: { "zh-tw": "幼平", "en": "Youping" },
+      name: { "zh-tw": "周泰", en: "Zhou Tai" },
+      style: { "zh-tw": "幼平", en: "Youping" },
       faction: 0,
-      wu: 90, tong: 85, zhi: 50, zheng: 60,
+      wu: 90,
+      tong: 85,
+      zhi: 50,
+      zheng: 60,
       portrait: { cap: "helmet", beard: "moustache", cue: "fierce" },
     },
     gan_ning: {
-      name: { "zh-tw": "甘寧", "en": "Gan Ning" },
-      style: { "zh-tw": "興霸", "en": "Xingba" },
+      name: { "zh-tw": "甘寧", en: "Gan Ning" },
+      style: { "zh-tw": "興霸", en: "Xingba" },
       faction: 0,
-      wu: 92, tong: 78, zhi: 55, zheng: 50,
+      wu: 92,
+      tong: 78,
+      zhi: 55,
+      zheng: 50,
       portrait: { cap: "helmet", beard: "moustache", cue: "wild" },
     },
     lu_xun: {
-      name: { "zh-tw": "陸遜", "en": "Lu Xun" },
-      style: { "zh-tw": "伯言", "en": "Boyan" },
+      name: { "zh-tw": "陸遜", en: "Lu Xun" },
+      style: { "zh-tw": "伯言", en: "Boyan" },
       faction: 0,
-      wu: 70, tong: 90, zhi: 95, zheng: 80,
+      wu: 70,
+      tong: 90,
+      zhi: 95,
+      zheng: 80,
       portrait: { cap: "crown", beard: "chin", cue: "scholarly" },
     },
 
     /* Other (袁紹, 呂布, 劉表, 袁術, 陶謙) */
     yuan_shao: {
-      name: { "zh-tw": "袁紹", "en": "Yuan Shao" },
-      style: { "zh-tw": "本初", "en": "Benchu" },
+      name: { "zh-tw": "袁紹", en: "Yuan Shao" },
+      style: { "zh-tw": "本初", en: "Benchu" },
       faction: 3, // ochre
-      wu: 70, tong: 75, zhi: 60, zheng: 85,
+      wu: 70,
+      tong: 75,
+      zhi: 60,
+      zheng: 85,
       portrait: { cap: "crown", beard: "long", cue: "pompous" },
     },
     lv_bu: {
-      name: { "zh-tw": "呂布", "en": "Lü Bu" },
-      style: { "zh-tw": "奉先", "en": "Fengxian" },
+      name: { "zh-tw": "呂布", en: "Lü Bu" },
+      style: { "zh-tw": "奉先", en: "Fengxian" },
       faction: 4, // violet
-      wu: 100, tong: 50, zhi: 30, zheng: 20,
+      wu: 100,
+      tong: 50,
+      zhi: 30,
+      zheng: 20,
       portrait: { cap: "helmet", beard: "moustache", cue: "wild" },
     },
     dian_wei: {
-      name: { "zh-tw": "典韋", "en": "Dian Wei" },
-      style: { "zh-tw": "君明", "en": "Junming" },
+      name: { "zh-tw": "典韋", en: "Dian Wei" },
+      style: { "zh-tw": "君明", en: "Junming" },
       faction: 4,
-      wu: 98, tong: 80, zhi: 30, zheng: 30,
+      wu: 98,
+      tong: 80,
+      zhi: 30,
+      zheng: 30,
       portrait: { cap: "helmet", beard: "moustache", cue: "fierce" },
     },
     hua_tuo: {
-      name: { "zh-tw": "華佗", "en": "Hua Tuo" },
-      style: { "zh-tw": "元化", "en": "Yuanhua" },
+      name: { "zh-tw": "華佗", en: "Hua Tuo" },
+      style: { "zh-tw": "元化", en: "Yuanhua" },
       faction: 6, // brown
-      wu: 25, tong: 40, zhi: 90, zheng: 80,
+      wu: 25,
+      tong: 40,
+      zhi: 90,
+      zheng: 80,
       portrait: { cap: "band", beard: "long", cue: "aged" },
     },
   };
@@ -377,10 +496,13 @@
      young commander, in faction colour. */
   function _fallback(id) {
     return {
-      name: { "zh-tw": id || "武將", "en": id || "General" },
-      style: { "zh-tw": "—", "en": "—" },
+      name: { "zh-tw": id || "武將", en: id || "General" },
+      style: { "zh-tw": "—", en: "—" },
       faction: 0,
-      wu: 70, tong: 70, zhi: 60, zheng: 60,
+      wu: 70,
+      tong: 70,
+      zhi: 60,
+      zheng: 60,
       portrait: { cap: "turban", beard: "moustache", cue: "calm" },
     };
   }
