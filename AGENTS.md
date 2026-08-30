@@ -1,11 +1,13 @@
 # AGENTS.md — The Outbreak (sketch zombie sim)
 
-A hand-drawn, "boiling line" sketch-style sim. Three HTML pages share one
+A hand-drawn, "boiling line" sketch-style sim. Four HTML pages share one
 core: `index.html` (the outbreak, a zombie horde in a paper town),
-`battle.html` (Cannae, 216 BC, 781-figure battle), and `hold.html` (The
-Hold, a tile-based zombie clicker — design in HOLD-DESIGN.md). Vanilla JS,
-Canvas 2D. No framework, no build step, no bundler — and it must stay that
-way (see Hard constraints).
+`battle.html` (Cannae, 216 BC, 781-figure battle), `hold.html` (The
+Hold, a tile-based zombie clicker — design in HOLD-DESIGN.md), and
+`sanguo.html` (火柴三國 / Matchstick Three Kingdoms, a turn-based campaign
+RPG wrapped around real-time battles — design in SANGUO-DESIGN.md, build
+status in PROGRESS.md). Vanilla JS, Canvas 2D. No framework, no build step,
+no bundler — and it must stay that way (see Hard constraints).
 
 ## Run it
 
@@ -263,6 +265,36 @@ pack shapes: tracer `{x0,y0,x1,y1,t}`, poof `{x,y,t,poof,seed}`, blood
 - **Pacing knobs**: `UNIT_SPD` (heavy advance 40, cav 172 charge), `ATK_CD`
   0.75, `SLNG_R` 190, `EXIT_PAD` 30, `HUNT_R` 900. A full battle runs
   ~60-100 s; the check script asserts 45-180 s.
+
+## 火柴三國 (`sanguo.html`, design in `SANGUO-DESIGN.md`, status in `PROGRESS.md`)
+
+A hybrid: a turn-based map-strategy RPG whose battles drop into the Cannae
+engine in real time. It is the only page with a shell (`ZS.App`: MENU →
+CAMPAIGN ↔ BATTLE → RESULT) and the only one that is bilingual.
+
+P0 is done — the page boots to a menu with no engine attached; `ZS.App` runs
+its own rAF loop until P1 wires the battle view. New top-level modules, all
+additive, none loaded by the other three pages: `js/store/*` (the `ZS.Store`
+persistence seam + Local/Memory/Remote backends), `js/auth/auth.js`
+(anonymous `deviceId`; an OAuth seam for later), `js/save/save-manager.js`
+(schema, `migrateUp` chain, capture/apply, shadow→main→bak durability),
+`js/i18n/*` (zh-tw default, en fallback), `js/fonts/*` (brush-kai subset
+loading), `js/text.js` (`ZS.boilText` — canvas type drawn per glyph on the
+boil), `js/app.js`, `js/ui/menu.js`. Verify with `node .verify/sanguo-p0.js`
+(45 assertions).
+
+The page ships a brush-kai face — **LXGW WenKai TC (霞鶩文楷), SIL OFL 1.1** —
+as a glyph subset cut to exactly the game's vocabulary (`fonts/`, licence and
+rebuild instructions in `fonts/README.md`). It is committed twice: as a
+`.woff2` for the `@font-face` rule, and as a `data:` URI in
+`js/fonts/subset-data.js`, because a CORS-mode font fetch from a `file://`
+opaque origin is refused and constraint 1 says the page must stay
+double-clickable. **Re-run `python tools/subset-font.py --check` after adding
+text to `js/i18n/*.js` or `js/campaign/data/*.js`** — new glyphs fall back
+silently otherwise.
+
+Nothing in `js/*.js` core changed for it. The only core change the design
+anticipates is an opt-in fixed sim-step flag in `main.js` at P2.
 
 ## Hold pack (`js/scenarios/hold.js`, design in `HOLD-DESIGN.md`)
 
