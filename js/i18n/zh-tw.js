@@ -65,9 +65,9 @@
     "battle.title": "沙場試鋒",
     "battle.stats": "我軍 {own}（歿 {ownLost}） · 敵軍 {foe}（歿 {foeLost}） · {time}",
     "battle.hint":
-      "左鍵框選 · 右鍵進擊 · 中鍵拖曳移動視角 · 滾輪縮放 · A 全選 · H 止步 · F 陣形 · 空白鍵暫停",
+      "左鍵框選 · 右鍵進擊 · 中鍵拖曳移動視角 · 滾輪縮放 · A 全選 · H 止步 · F 陣形 · G 將令 · 空白鍵暫停",
     "battle.hint.selected":
-      "已選 {n} 隊 · 右鍵進擊 · Ctrl+右鍵行軍 · Shift 續令 · Ctrl+數字編隊 · 中鍵拖曳移動視角",
+      "已選 {n} 隊 · 右鍵進擊 · Ctrl+右鍵行軍 · Shift 續令 · Ctrl+數字編隊 · G 將令 · 中鍵拖曳移動視角",
     "battle.win": "我軍得勝",
     "battle.lose": "我軍潰敗",
     "battle.result": "敵軍 {dead} 歿 · {fled} 潰散",
@@ -87,6 +87,9 @@
     "battle.type.halberd": "戟兵",
     "battle.type.cav": "騎兵",
     "battle.type.hbow": "弓騎兵",
+    "battle.general.fire": "火將",
+    "battle.general.edge": "鋒將",
+    "battle.general.unknown": "將軍",
 
     "err.saveFailed": "存檔失敗：{code}",
     "err.loadFailed": "讀取失敗：{code}",

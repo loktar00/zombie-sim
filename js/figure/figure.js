@@ -418,7 +418,7 @@
     // the name, written down the cloth
     c.fillStyle = INK;
     const size = 8 * k;
-    const str = a.name;
+    const str = ZS.i18n ? ZS.i18n.t(a.name) : String(a.name);
     for (let i = 0; i < str.length && i < 3; i++) {
       ZS.boilText(c, str[i], px - w / 2, top + 9 * k + i * size * 1.15, size, s + 90 + i, "center");
     }
