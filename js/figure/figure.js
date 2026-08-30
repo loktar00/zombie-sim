@@ -28,7 +28,11 @@
     BOW = 2, // 弩兵
     JI = 3, // 戟兵
     CAV = 4, // 騎兵
-    HBOW = 5; // 弓騎兵
+    HBOW = 5, // 弓騎兵
+    // Heavy equipment / special — same body, weapon is the read
+    CATAPULT = 6, // 投石車 — operated by a crew
+    RAM = 7, // 衝車 — the siege ram
+    STANDARD = 8; // 旗手 — the standard bearer (any unit type)
 
   /* Rank tiers — size plus marks, still one body (§7.4). */
   const TROOPER = 0,
@@ -60,6 +64,15 @@
   /* Draws body and weapon. `k` is the tier scale; everything below is written
      at k = 1 and multiplied, so a general is the same drawing 25% larger. */
   function drawFoot(c, a, moving) {
+    // Equipment types replace the stickman entirely (one figure = one wagon)
+    if (a.type === CATAPULT) {
+      drawCatapult(c, a);
+      return;
+    }
+    if (a.type === RAM) {
+      drawRam(c, a);
+      return;
+    }
     const s = a.seed;
     const k = TIER_SCALE[a.tier || 0];
     const g = Math.sin(a.gait) * 3 * k * Math.min(1, moving / 26 + 0.25);
@@ -80,7 +93,12 @@
     ZS.wline(c, hx, hy + 4 * k, a.x, a.y - 1, s + 23, 1);
     ZS.wcirc(c, hx, hy, 4.2 * k, s + 29, 0.8);
 
-    drawWeapon(c, a, hx, hy, k);
+    // standard bearers replace the personal weapon with a tall pole + cloth
+    if (a.type === STANDARD) {
+      drawStandard(c, a, hx, hy, k);
+    } else {
+      drawWeapon(c, a, hx, hy, k);
+    }
 
     // face: one dot on the forward side
     const ca = Math.cos(a.a);
@@ -199,6 +217,148 @@
     c.fill();
     c.stroke();
     ZS.wline(c, hx, hy + 5 * k, ox, oy, a.seed + 37, 0.8);
+  }
+
+  /* ---------- equipment: catapult + ram (drawn as a footprint that
+                 replaces the stickman when a.type is CATAPULT or RAM) ----- */
+
+  /* Catapult — 投石車. A small wobbly frame on two wheels, an arm angled
+     up, and a counterweight. Drawn around (a.x, a.y), facing a.a. */
+  function drawCatapult(c, a, t) {
+    void t; // reserved for a future "winding up" pose
+    const s = a.seed;
+    const k = TIER_SCALE[a.tier || 0] * 1.1;
+    const ca = Math.cos(a.a),
+      sa = Math.sin(a.a);
+    // chassis
+    c.strokeStyle = INK;
+    c.lineWidth = 1.5;
+    ZS.wline(c, a.x - 14 * k, a.y + 4, a.x + 14 * k, a.y + 4, s + 1, 0.8);
+    ZS.wline(c, a.x - 10 * k, a.y + 4, a.x - 10 * k, a.y + 8, s + 2, 0.5);
+    ZS.wline(c, a.x + 10 * k, a.y + 4, a.x + 10 * k, a.y + 8, s + 3, 0.5);
+    // wheels
+    c.lineWidth = 1.2;
+    ZS.wcirc(c, a.x - 9 * k, a.y + 9, 3.5 * k, s + 4, 0.5);
+    ZS.wcirc(c, a.x + 9 * k, a.y + 9, 3.5 * k, s + 5, 0.5);
+    // the A-frame
+    ZS.wline(c, a.x - 8 * k, a.y + 4, a.x, a.y - 14 * k, s + 6, 0.6);
+    ZS.wline(c, a.x + 8 * k, a.y + 4, a.x, a.y - 14 * k, s + 7, 0.6);
+    // the arm (a single wline from the fulcrum angled up + a counterweight)
+    const armX1 = a.x - ca * 4 * k,
+      armY1 = a.y - 14 * k - sa * 4 * k;
+    const armX2 = a.x + ca * 16 * k,
+      armY2 = a.y - 14 * k + sa * 16 * k;
+    c.lineWidth = 1.4;
+    ZS.wline(c, armX1, armY1, armX2, armY2, s + 8, 0.6);
+    // counterweight
+    c.fillStyle = wash(a.faction, 0.4);
+    ZS.wcirc(c, armX1, armY1, 3.2 * k, s + 9, 0.5);
+    c.fill();
+    c.stroke();
+    // the stone (a small ball at the end of the arm)
+    c.fillStyle = "rgba(120,110,90,0.7)";
+    c.beginPath();
+    c.arc(armX2, armY2, 2.2 * k, 0, 6.29);
+    c.fill();
+    c.stroke();
+  }
+
+  /* Ram — 衝車. A wobbly shed on wheels, a long log hanging from the
+     roof. Crew visible as two stickmen behind. */
+  function drawRam(c, a, t) {
+    void t; // reserved for a future impact recoil
+    const s = a.seed;
+    const k = TIER_SCALE[a.tier || 0] * 1.05;
+    const ca = Math.cos(a.a),
+      sa = Math.sin(a.a);
+    c.strokeStyle = INK;
+    c.lineWidth = 1.5;
+    // the shed (a small rectangle)
+    ZS.wline(c, a.x - 12 * k, a.y - 6, a.x + 10 * k, a.y - 6, s + 1, 0.6);
+    ZS.wline(c, a.x - 12 * k, a.y - 6, a.x - 12 * k, a.y + 6, s + 2, 0.5);
+    ZS.wline(c, a.x + 10 * k, a.y - 6, a.x + 10 * k, a.y + 6, s + 3, 0.5);
+    // the sloped roof
+    ZS.wline(c, a.x - 12 * k, a.y - 6, a.x - 8 * k, a.y - 12 * k, s + 4, 0.5);
+    ZS.wline(c, a.x + 10 * k, a.y - 6, a.x + 6 * k, a.y - 12 * k, s + 5, 0.5);
+    ZS.wline(c, a.x - 8 * k, a.y - 12 * k, a.x + 6 * k, a.y - 12 * k, s + 6, 0.5);
+    // the wheels
+    c.lineWidth = 1.2;
+    ZS.wcirc(c, a.x - 8 * k, a.y + 7, 3.5 * k, s + 7, 0.5);
+    ZS.wcirc(c, a.x + 6 * k, a.y + 7, 3.5 * k, s + 8, 0.5);
+    // the ram log — a long wline sticking out the front
+    const tipX = a.x + ca * 22 * k,
+      tipY = a.y + sa * 22 * k;
+    c.lineWidth = 1.6;
+    ZS.wline(c, a.x + 10 * k, a.y, tipX, tipY, s + 9, 0.7);
+    // the metal head
+    c.fillStyle = "rgba(120,110,90,0.7)";
+    c.beginPath();
+    c.arc(tipX, tipY, 2.2 * k, 0, 6.29);
+    c.fill();
+    c.stroke();
+  }
+
+  /* Standard bearer — replaces the body weapon with a tall banner pole
+     that has the faction flag on it. Keeps the same stickman body so it
+     reads as a "man with a flag" rather than a new unit.
+
+     If `a.flag` is set, the cloth is drawn from the full ZS.flag system
+     (shape, color, text, all from a preset like `shu` / `cao_cao` /
+     `flag_wei_cao`). Otherwise the bearer carries the generic faction
+     sash — backwards compatible with callers that never set a.flag. */
+  function drawStandard(c, a, hx, hy, k) {
+    const s = a.seed;
+    c.strokeStyle = INK;
+    c.lineWidth = 1.4;
+    // the pole
+    const poleX = hx - 4 * k,
+      poleTop = hy - 30 * k;
+    const poleBot = hy + 5 * k;
+    ZS.wline(c, poleX, poleBot, poleX, poleTop, s + 31, 0.5);
+    const w = 12 * k;
+    if (a.flag && ZS.flag && ZS.flag.draw) {
+      // the full flag, scaled to the bearer's reach
+      const fy = poleTop - 1;
+      ZS.flag.draw(c, a.flag, poleX - w, fy, w * 1.6, 18 * k, 0);
+    } else {
+      // the cloth: two wpoly waves on the pole
+      c.fillStyle = wash(a.faction, 0.6);
+      ZS.wpoly(
+        c,
+        [
+          { x: poleX, y: poleTop + 2 },
+          { x: poleX - w, y: poleTop + 2 + ZS.sjit(s) * 0.6 },
+          { x: poleX - w, y: poleTop + 18 * k },
+          { x: poleX, y: poleTop + 16 * k },
+        ],
+        s + 33,
+        0.6,
+        true,
+      );
+      c.fill();
+      c.stroke();
+      // a glyph square — a single wline on the cloth (e.g. a 將 character mark)
+      c.strokeStyle = INK_SOFT;
+      c.lineWidth = 1.2;
+      ZS.wline(
+        c,
+        poleX - w * 0.5,
+        poleTop + 6 * k,
+        poleX - w * 0.5,
+        poleTop + 12 * k,
+        s + 35,
+        0.4,
+      );
+      ZS.wline(
+        c,
+        poleX - w * 0.7,
+        poleTop + 9 * k,
+        poleX - w * 0.3,
+        poleTop + 9 * k,
+        s + 36,
+        0.4,
+      );
+    }
   }
 
   /* ---------- the mounted variant (§7.3) ---------- */
@@ -431,6 +591,9 @@
     JI,
     CAV,
     HBOW,
+    CATAPULT,
+    RAM,
+    STANDARD,
     TROOPER,
     NCO,
     OFFICER,
@@ -444,5 +607,8 @@
     drawMarks,
     drawWeapon,
     drawShield,
+    drawCatapult,
+    drawRam,
+    drawStandard,
   };
 })();

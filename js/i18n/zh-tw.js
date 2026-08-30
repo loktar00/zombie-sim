@@ -87,6 +87,9 @@
     "battle.type.halberd": "戟兵",
     "battle.type.cav": "騎兵",
     "battle.type.hbow": "弓騎兵",
+    "battle.type.catapult": "投石車",
+    "battle.type.ram": "衝車",
+    "battle.type.standard": "旗手",
 
     "err.saveFailed": "存檔失敗：{code}",
     "err.loadFailed": "讀取失敗：{code}",

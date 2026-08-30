@@ -79,6 +79,18 @@
       window.addEventListener("resize", () => this.resize());
       this.resize();
 
+      // Music needs an unlocked audio context. The first user gesture
+      // unlocks ZS.sound; we ride that same gesture to init the music
+      // engine. Until then music.init() is a no-op.
+      if (ZS.music) {
+        ZS.music.setVolume(this.settings.music || 0.5);
+        const _onGesture = () => {
+          if (ZS.music) ZS.music.init();
+          window.removeEventListener("pointerdown", _onGesture, true);
+        };
+        window.addEventListener("pointerdown", _onGesture, true);
+      }
+
       if (ZS.UI) ZS.UI.build(this);
 
       ZS.debug = {
@@ -129,7 +141,10 @@
       const s = this.settings;
       if (typeof data.master === "number") s.master = data.master;
       if (typeof data.sfx === "number") s.sfx = data.sfx;
-      if (typeof data.music === "number") s.music = data.music;
+      if (typeof data.music === "number") {
+        s.music = data.music;
+        if (ZS.music) ZS.music.setVolume(data.music);
+      }
       if (typeof data.autoResolveDefault === "boolean") {
         s.autoResolveDefault = data.autoResolveDefault;
       }
@@ -161,6 +176,12 @@
       if (next.ownsLoop) this.stop();
       if (next.resize) next.resize(this.W, this.H);
       if (next.enter) next.enter(payload);
+      // Music follows the view: each view declares its own soundtrack.
+      if (ZS.music) {
+        const track = (next.music || (this.view && this.view.music)) || null;
+        if (track) ZS.music.play(track);
+        else ZS.music.stop();
+      }
       if (!next.ownsLoop) this.start();
       if (ZS.UI) ZS.UI.onState(state);
       return true;
@@ -205,6 +226,7 @@
     step(dt, t) {
       ZS.setBoil(t);
       ZS.SaveManager.tick(dt);
+      if (ZS.music) ZS.music.tick(dt);
       if (this.view && this.view.update) this.view.update(dt, t);
       const c = this.ctx;
       c.setTransform(this.DPR, 0, 0, this.DPR, 0, 0);
@@ -257,6 +279,7 @@
      (js/ui/menu.js) so they get focus, keyboard and data-i18n for free. */
   const MenuView = {
     tt: 0,
+    music: "menu",
     enter() {
       this.tt = 0;
     },
@@ -353,6 +376,7 @@
     ownsLoop: true,
     engine: null,
     scen: null,
+    music: "battle",
 
     enter(payload) {
       const setup =

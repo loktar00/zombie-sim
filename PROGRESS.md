@@ -59,7 +59,39 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 | P4 | The handoff: `BattleSetup`/`BattleResult`, field kinds, auto-resolve | ☐ |
 | P5 | Generals as RPG: xp, skills, items, loyalty, duels | ☐ |
 | P6 | AI factions, events, after-action card, `RemoteStore` | ☐ |
-| P7 | Balance, content, audio | ☐ |
+| P7 | Balance, content, audio | 🚧 art system done; balance still open |
+
+### P7 partial: the art + audio system
+
+The art + audio system is in. The full visual + sonic vocabulary of
+the game is procedurally generated — no images, no sprite sheets, no
+audio files, file:// stays single-click. See `SANGUO-ART.md` for the
+design contract.
+
+| # | Task | Status | Files |
+|---|---|---|---|
+| 7.1 | The unit / figure system — stickman baseline + 9 unit types (槍 / 刀盾 / 弩 / 戟 / 騎 / 弓騎 / 投石車 / 衝車 / 旗手) + 4 rank tiers | ✅ | `js/figure/figure.js` |
+| 7.2 | The flag system — 7 shapes × 3 border styles × 3 text styles; **chrome and text are independent record fields, freely swappable** | ✅ | `js/art/flag.js` |
+| 7.3 | Flag preset catalogue — 94 entries covering the 3 kingdoms, 14 major families, 22 194 CE warlords, 34 major generals, 13 Han provinces, 5 imperial + rebellion banners | ✅ | `ZS.flag.PRESETS` |
+| 7.4 | Flag helpers — `plant()` for in-world markers, `bearer()` for STANDARD units, `forFaction()` for the campaign-pick panel | ✅ | `ZS.flag.{plant,bearer,forFaction}` |
+| 7.5 | STANDARD units honour `a.flag` — `drawStandard` routes through `ZS.flag.draw` when set, falls back to the generic faction sash otherwise | ✅ | `js/figure/figure.js` |
+| 7.6 | The portrait system — 23 named generals, headgear × beard × expression vocabulary | ✅ | `js/figure/portrait.js` |
+| 7.7 | The environment catalogue — trees, hills, rivers, camps, walls, gates, bridges, ruins, roads | ✅ | `js/art/environment.js` |
+| 7.8 | The UI art catalogue — banner, save-thumb, button glyphs, seal, tally, title banner | ✅ | `js/art/ui.js` |
+| 7.9 | SFX kit — 13 new battle events (sword clash, arrow fly, cavalry charge, drum roll, retreat horn, etc.) on top of the Outbreak's existing voice synth | ✅ | `js/sound.js` |
+| 7.10 | Music engine — procedural layered synth (pluck / bass / pad / drums) with `menu` / `battle` / `victory` / `defeat` / 8 `faction_sting_*` / `turn_change` tracks | ✅ | `js/music/music.js` |
+| 7.11 | One real menu track — a 22.6 s guzheng piece (Karplus-Strong synthesis), generated offline, base64-embedded as `js/music/menu-track-data.js` | ✅ | `tools/build-menu-track.py` + `menu-track-data.js` |
+| 7.12 | Font subset extension — `tools/extend-subset.py` patches the existing woff2 in place when new i18n glyphs are added (stopgap until a real source-face rebuild) | ✅ | `tools/extend-subset.py` |
+
+The music wires into `ZS.App.go(state)` — each view declares its own
+soundtrack (`menu: 'menu'`, `battle: 'battle'`) and the shell handles
+the rest. Settings.music flows into `music.setVolume` automatically.
+
+### What P7 still needs
+
+- Battle balance — pacing (the 60-180 s window from §1), unit composition, ability tuning
+- Content — full campaign roster, dialogue, events, after-action card copy
+- The `RemoteStore` work that was deferred from P6
 
 ---
 

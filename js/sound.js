@@ -24,6 +24,20 @@
     fire: 0.2,
     turret: 0.3,
     horn: 4,
+    // Sanguo battle kit — swords, arrows, hooves, drums, signals (§4.4)
+    sword_clash: 0.09,
+    arrow_fly: 0.06,
+    cav_charge: 0.45,
+    drum_roll: 0.3,
+    drum_hit: 0.12,
+    retreat_horn: 1.6,
+    formation_shift: 0.35,
+    order_ack: 0.18,
+    order_fail: 0.22,
+    duel_intro: 0.5,
+    crossbow_thrum: 0.14,
+    banner_wave: 0.8,
+    blade_sheath: 0.25,
     // the formant voice lines
     v_shout: 0.35,
     v_gasp: 0.3,
@@ -913,6 +927,95 @@
         const hb = Math.max(B, 0.5);
         voice({ f: 330, f2: 520, type: "sawtooth", cut: 1100, q: 1.8, t: 0.9, g: 0.4 * hb });
         voice({ f: 165, f2: 110, t: 0.9, g: 0.3 * hb });
+        break;
+      }
+      // ---------- Sanguo battle kit ----------
+      case "sword_clash": {
+        // two ringing tones at inharmonic ratios + a noise strike —
+        // the felt sense is "metal on metal", not a single note
+        const f1 = 620 + Math.random() * 380;
+        voice({ f: f1, f2: f1 * 0.6, t: 0.22, g: 0.4 * B, type: "triangle" });
+        voice({ f: f1 * 1.5, t: 0.08, g: 0.25 * B, type: "triangle" });
+        voice({ n: 1, cut: 5200, bt: "highpass", t: 0.05, g: 0.3 * B });
+        break;
+      }
+      case "arrow_fly": {
+        // a quick twang: a damped plucked-string-ish chirp
+        const f = 880 + Math.random() * 320;
+        voice({ f, f2: f * 0.42, t: 0.16, g: 0.32 * B, type: "sawtooth", cut: 2400, q: 1.4 });
+        voice({ n: 1, cut: 1600, t: 0.04, g: 0.12 * B });
+        break;
+      }
+      case "cav_charge": {
+        // hooves: a low rumble with periodic thuds, fading fast
+        voice({ f: 80, f2: 55, t: 0.7, g: 0.5 * B, type: "sawtooth", cut: 380 });
+        const beats = 5;
+        for (let i = 0; i < beats; i++) {
+          voice({ f: 55 + Math.random() * 18, t: 0.07, g: 0.35 * B, a: i * 0.09 });
+        }
+        break;
+      }
+      case "drum_roll": {
+        // a tight roll: 6 hits, ~70ms apart, low tom
+        for (let i = 0; i < 6; i++) {
+          voice({ f: 95 + (i % 2) * 4, f2: 55, t: 0.06, g: 0.5 * B, a: i * 0.07 });
+          voice({ n: 1, cut: 320, t: 0.025, g: 0.18 * B, a: i * 0.07 });
+        }
+        break;
+      }
+      case "drum_hit": {
+        // a single deep hit, a beat's "one"
+        voice({ f: 90, f2: 48, t: 0.25, g: 0.7 * B, type: "sine" });
+        voice({ n: 1, cut: 280, t: 0.12, g: 0.4 * B });
+        break;
+      }
+      case "retreat_horn": {
+        // falling: a wavering pair of tones, the "撤"
+        const rb = Math.max(B, 0.4);
+        voice({ f: 480, f2: 320, t: 1.1, g: 0.4 * rb, type: "sawtooth", cut: 1400, q: 1.6 });
+        voice({ f: 240, f2: 160, t: 1.0, g: 0.3 * rb });
+        break;
+      }
+      case "formation_shift": {
+        // the rustle of ranks moving: a mid noise whoosh
+        voice({ n: 1, cut: 1200, bt: "bandpass", q: 1.0, t: 0.5, g: 0.2 * B });
+        voice({ f: 220, f2: 180, t: 0.45, g: 0.08 * B, type: "triangle" });
+        break;
+      }
+      case "order_ack": {
+        // a soft "click" confirming an order
+        voice({ f: 720, t: 0.04, g: 0.3 * B, type: "square" });
+        voice({ f: 1200, t: 0.03, g: 0.15 * B, type: "sine" });
+        break;
+      }
+      case "order_fail": {
+        // a flat "nope" — descending pair
+        voice({ f: 320, f2: 180, t: 0.18, g: 0.32 * B, type: "square" });
+        break;
+      }
+      case "duel_intro": {
+        // the slow draw: a low rising tone over a single drum hit
+        const db = Math.max(B, 0.45);
+        voice({ f: 220, f2: 380, t: 0.7, g: 0.32 * db, type: "sawtooth", cut: 900, q: 1.2 });
+        voice({ f: 90, f2: 50, t: 0.3, g: 0.55 * db });
+        break;
+      }
+      case "crossbow_thrum": {
+        // the heavy twang + the bolt's gone — a release thump
+        voice({ f: 180, f2: 75, t: 0.18, g: 0.45 * B, type: "triangle" });
+        voice({ n: 1, cut: 1200, t: 0.05, g: 0.18 * B });
+        break;
+      }
+      case "banner_wave": {
+        // the cloth flap: a fast lowpassed noise + a soft high-end puff
+        voice({ n: 1, cut: 800, t: 0.18, g: 0.25 * B });
+        voice({ f: 1400, f2: 800, t: 0.12, g: 0.1 * B, type: "triangle" });
+        break;
+      }
+      case "blade_sheath": {
+        // a short metallic "shing" then a soft thud
+        voice({ f: 1800, f2: 800, t: 0.09, g: 0.28 * B, type: "sawtooth", cut: 3200, q: 1.4 });
+        voice({ f: 90, t: 0.06, g: 0.2 * B });
         break;
       }
     }

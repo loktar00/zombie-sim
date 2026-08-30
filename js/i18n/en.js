@@ -88,6 +88,9 @@
     "battle.type.halberd": "Halberdiers",
     "battle.type.cav": "Cavalry",
     "battle.type.hbow": "Horse archers",
+    "battle.type.catapult": "Catapult",
+    "battle.type.ram": "Battering ram",
+    "battle.type.standard": "Standard bearer",
 
     "err.saveFailed": "Save failed: {code}",
     "err.loadFailed": "Load failed: {code}",
