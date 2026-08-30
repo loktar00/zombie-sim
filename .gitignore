@@ -7,3 +7,6 @@ js.bak/
 *.log
 *.mp4
 *.webm
+/.agents/skills
+/.claude/skills
+/skills-lock.json
