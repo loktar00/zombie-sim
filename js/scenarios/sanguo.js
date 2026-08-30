@@ -103,7 +103,7 @@
         {
           factionId: 0,
           comp,
-          onField: 320,
+          onField: 1000,
           reserve: 0,
           generals: [
             {
@@ -119,7 +119,7 @@
         {
           factionId: 1,
           comp,
-          onField: 320,
+          onField: 1000,
           reserve: 0,
           generals: [
             {
@@ -1419,6 +1419,10 @@
         y: y - across * ch + back * sh,
       });
       const built = [];
+      /* Keep a thousand-man army readable: add depth as blocks grow instead
+         of letting a four-rank unit stretch hundreds of pixels sideways into
+         its neighbours. Deployment runs once, so this helper is cold-path. */
+      const ranksFor = (count, minimum) => Math.max(minimum, Math.ceil(count / 16));
       const spear = men[0],
         dao = men[1],
         bow = men[2],
@@ -1441,7 +1445,7 @@
             y: p1.y,
             head,
             form: "line",
-            formOpts: { ranks: 4 },
+            formOpts: { ranks: ranksFor(half, 4) },
           }),
         );
         if (spear - half > 0) {
@@ -1456,7 +1460,7 @@
               y: p2.y,
               head,
               form: "line",
-              formOpts: { ranks: 4 },
+              formOpts: { ranks: ranksFor(spear - half, 4) },
             }),
           );
         }
@@ -1473,7 +1477,7 @@
             y: p.y,
             head,
             form: "line",
-            formOpts: { ranks: 4 },
+            formOpts: { ranks: ranksFor(dao, 4) },
           }),
         );
       }
@@ -1489,7 +1493,7 @@
             y: p.y,
             head,
             form: "line",
-            formOpts: { ranks: 3 },
+            formOpts: { ranks: ranksFor(bow, 3) },
           }),
         );
       }
@@ -1505,7 +1509,7 @@
             y: p.y,
             head,
             form: "line",
-            formOpts: { ranks: 4 },
+            formOpts: { ranks: ranksFor(ji, 4) },
           }),
         );
       }
@@ -1620,8 +1624,8 @@
         NY = 10;
       for (let i = 0; i < S.length; i++) {
         const s = S[i];
-        const hw = 720 * s,
-          hh = 640 * s;
+        const hw = 960 * s,
+          hh = 760 * s;
         let best = null,
           bs = -1;
         for (let gy = 380; gy <= world.h - 380; gy += 220) {
@@ -1682,8 +1686,8 @@
 
       const f = this._findField(world, world.nav);
       this.field = f;
-      const gap = 560 * f.s;
-      const span = 620 * f.s;
+      const gap = 900 * f.s;
+      const span = 720 * f.s;
       // side 0 (the player) deploys west facing east; side 1 east facing west
       this._deploySide(agents, 0, setup.sides[0], f.x - gap / 2, f.y, 0, span);
       this._deploySide(agents, 1, setup.sides[1], f.x + gap / 2, f.y, Math.PI, span);

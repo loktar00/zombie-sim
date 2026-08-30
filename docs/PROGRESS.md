@@ -148,7 +148,7 @@ the rest. Settings.music flows into `music.setVolume` automatically.
 
 - the shell hands the frame loop to the engine and takes it back; **never two
   loops**, and leaving a battle removes every listener the engine added
-- 640 men deploy as 12 blocks of four types, 1 figure = 1 man
+- 2,000 men deploy as two 1,000-strong armies, 1 figure = 1 man
 - click-select, box-select, control groups, select-all, halt, formation cycle
 - right-click attack-moves, right-click on an enemy charges, ctrl+right marches,
   shift queues — and every order lands in the replay log
@@ -185,7 +185,7 @@ the rest. Settings.music flows into `music.setVolume` automatically.
 
 ### What the P2 slice proves so far
 
-- the default 640-man skirmish still fields exactly 640 figures; one figure on
+- the default 2,000-man skirmish fields exactly 2,000 figures; one figure on
   each side is promoted to the general supplied by `BattleSetup`, not added as
   a free extra body
 - morale is updated per unit four times per second rather than by a hot-loop
@@ -320,7 +320,7 @@ live in `SANGUO-DESIGN.md` §11.)
     gives the player a first-command beat, and keeps passive-player battles in
     the designed 60–180 s window. A crisis can still promote a reserve before
     the opening completes.
-16. **Far mass LOD is population-aware.** At the normal 640-man skirmish, fit
+16. **Far mass LOD is population-aware.** At the normal 2,000-man skirmish, fit
     view keeps individual mid-detail silhouettes; rank masses activate at fit
     zoom only on fields above 1,200 figures. Close zoom always uses the frozen
     full figure. This preserves the product look where the renderer has budget
@@ -505,5 +505,5 @@ Every one of these also presented as "the battle stalls":
   reused geometry, and retained sparse individual fugitives for routed blocks.
   On headed Chrome at 2,000/side, fit render cost dropped 12.4 → 0.8 ms and an
   actual 180-frame rAF sample held 60.0 fps (p95 16.8 ms, max 17.7 ms), so the
-  provisional `FIELD_CAP = 2000` is accepted. Normal 640-man fit view remains
+  provisional `FIELD_CAP = 2000` is accepted. Normal 2,000-man fit view remains
   individual, not massed.
