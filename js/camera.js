@@ -13,6 +13,10 @@
       this.minZoom = 0.1;
       this.maxZoom = 2.5;
       this.auto = false;
+      // Render-only feedback offset in screen pixels. It is additive after
+      // follow/clamp and never changes the simulated camera focus.
+      this.shakeX = 0;
+      this.shakeY = 0;
     }
 
     // fit the whole world into the viewport, centered
@@ -33,8 +37,8 @@
 
     toWorld(sx, sy, vw, vh) {
       return {
-        x: (sx - vw / 2) / this.zoom + this.x,
-        y: (sy - vh / 2) / this.zoom + this.y,
+        x: (sx - vw / 2 - this.shakeX) / this.zoom + this.x,
+        y: (sy - vh / 2 - this.shakeY) / this.zoom + this.y,
       };
     }
 
@@ -70,7 +74,7 @@
     }
 
     apply(c, vw, vh) {
-      c.translate(vw / 2, vh / 2);
+      c.translate(vw / 2 + this.shakeX, vh / 2 + this.shakeY);
       c.scale(this.zoom, this.zoom);
       c.translate(-this.x, -this.y);
     }
