@@ -58,27 +58,42 @@
       this.goalI = -1;
       this.goalX = 0;
       this.goalY = 0;
+      this.reqI = -1; // the cell that was *asked* for, before any relocation
       this.navV = -1;
       this.built = false;
     }
 
-    /* True when a rebuild would be wasted: same goal cell, same nav version. */
+    /* True when a rebuild would be wasted: the same goal cell was asked for,
+       against the same nav version. Comparing against the *resolved* goal
+       instead would miss every time the request had to be relocated onto open
+       ground, and rebuild the identical field on every order. */
     isFor(x, y) {
-      return this.built && this.navV === this.nav.version && this.nav.idx(x, y) === this.goalI;
+      return this.built && this.navV === this.nav.version && this.nav.idx(x, y) === this.reqI;
     }
 
     build(x, y) {
       const nav = this.nav;
-      let gi = nav.idx(x, y);
+      this.reqI = nav.idx(x, y);
+      /* A build that cannot start invalidates the field. Leaving `built` set
+         meant the previous goal's costs were still sitting in the arrays, so
+         `distAt` cheerfully answered for a destination this field knows
+         nothing about — and an impossible order was accepted as reachable. */
+      let gi = this.reqI;
       if (gi < 0 || !nav.isWalkable(x, y, false)) {
         /* Ordered onto a wall or off the map: aim at the nearest open ground
-           instead of refusing the order. */
+           instead of refusing the order outright. */
         const p = nav.nearestWalkable(x, y, 400, false);
-        if (!p) return false;
+        if (!p) {
+          this.built = false;
+          return false;
+        }
         x = p.x;
         y = p.y;
         gi = nav.idx(x, y);
-        if (gi < 0) return false;
+        if (gi < 0) {
+          this.built = false;
+          return false;
+        }
       }
       this.goalI = gi;
       this.goalX = x;
@@ -131,6 +146,7 @@
     }
 
     distAt(x, y) {
+      if (!this.built) return INF;
       const i = this.nav.idx(x, y);
       return i < 0 ? INF : this.cost[i];
     }

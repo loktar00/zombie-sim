@@ -16,7 +16,7 @@ re-deriving anything.
 |---|---|
 | **Phase** | **P1 — the skirmish battle** |
 | **Status** | ✅ **complete** (P0 ✅ too) |
-| **Verify** | `node .verify/sanguo-p1.js` → **51 passed, 0 failed**<br>`node .verify/sanguo-p0.js` → **45 / 0 / 0**<br>`node .verify/pages-regression.js` → **23 / 0** (the other three pages) |
+| **Verify** | `node .verify/sanguo-p1.js` → **62 passed, 0 failed**<br>`node .verify/sanguo-p0.js` → **45 / 0 / 0**<br>`node .verify/pages-regression.js` → **23 / 0** (the other three pages)<br>`node .verify/sanguo-seed-sweep.js` → 16/16 battles resolve |
 | **Updated** | 2026-08-30 |
 
 ### Next action
@@ -117,8 +117,10 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 | 1.7 | `ZS.Command` — selection, control groups, orders, overlay | ✅ | `js/battle/command.js` |
 | 1.8 | BATTLE view + skirmish entry + battle bar | ✅ | `js/app.js`, `js/ui/menu.js` |
 | 1.9 | Battle i18n keys (both tables) + font subset rebuild | ✅ | `js/i18n/*`, `fonts/` |
-| 1.10 | Playwright P1 verification (51 assertions) | ✅ | `.verify/sanguo-p1.js` |
+| 1.10 | Playwright P1 verification (62 assertions) | ✅ | `.verify/sanguo-p1.js` |
 | 1.11 | Regression suite for the three original pages | ✅ | `.verify/pages-regression.js` |
+| 1.12 | Bug sweep: 12 fixed, each one now an assertion | ✅ | see below |
+| 1.13 | Seed sweep — no battle may hang | ✅ | `.verify/sanguo-seed-sweep.js` |
 
 ### What P1 proves
 
@@ -134,6 +136,13 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 - **determinism**: same seed + same orders gives the same duration, the same
   winner, the same casualties, and the same men in the same places (a position
   digest over every agent) — while a different seed fights a different battle
+- **no battle hangs**: eight seeds fought out against a completely passive
+  player all reach a decision, in 20-200 s
+- the side ledger never goes negative and always sums to what was deployed
+- an advance is not halted by a man running away; hotkeys stay out of form
+  fields; order markers fade on elapsed time; `go()` to an unbuilt phase leaves
+  a running battle untouched; an unreachable goal is refused and leaves the
+  current order intact
 - the three original pages are untouched by the core changes
 
 ---
@@ -255,8 +264,83 @@ live in `SANGUO-DESIGN.md` §11.)
 
 ## Bugs worth remembering
 
-Four in the movement layer. Every one of them presented as "the battle stalls
-and never ends", and none was where it looked:
+### The stall family
+
+Six separate faults, every one of which presented as "the battle stalls and
+never ends". They were found by sweeping seeds with a passive player and
+watching where blocks ended up, not by reading code — the endpoints all looked
+the same and the causes were all different. `.verify/sanguo-seed-sweep.js` is
+that sweep, kept; the P1 suite runs a shorter version every time.
+
+The tell that broke it open was instrumenting a stuck block: **unit drive 43
+px/s, average member speed 4 px/s**. The unit was being commanded correctly and
+the men were not going. Once that was measured the rest fell out quickly.
+
+5. **Men braked to a halt to fight people who were running away.** The melee
+   branch sheds momentum on purpose — that is how a line braces — but it fired
+   for any enemy in reach, routers included. A block standing in a rout froze
+   mid-march. Its mirror image: a *stationary* block's men chased routers
+   individually (drive 0, member speed 55) and tore the formation across the
+   map. Now a man in reach is struck either way, and only a *fighting* enemy is
+   worth stopping for; pursuit is a unit decision, not each man's.
+6. **Slot targets could fall outside the map.** A block pushed into a corner put
+   half its slots off-world; those men could never reach them, kept pulling
+   outward, and because the slot pull (58) beats the march drive (40) the whole
+   block deadlocked against the edge. Slots are clamped inside the field now.
+7. **`_setGoal` moved the goal before deciding it was reachable**, so a refused
+   goal still overwrote `tx`/`ty` and left a HOLD block carrying a destination
+   it would never march to.
+8. **A `FlowField.build()` that failed left the previous field in place.**
+   `built` stayed set, the old costs stayed in the arrays, and `distAt`
+   cheerfully answered for a goal the field knew nothing about — so an
+   impossible order was accepted as reachable. A failed build invalidates the
+   field, `distAt` returns Infinity when it is not built, and `_setGoal` honours
+   what `build()` returned.
+9. **A battle neither side could finish had no ending.** Two spent remnants that
+   cannot reach or break each other are a real outcome, not a bug — but running
+   for ever is. A field where nobody has fallen for 45 s is now called: the
+   stronger remnant holds it, or it is a draw. `BattleResult.winner` already
+   admitted `"draw"` (§4.3).
+10. **No watchdog.** Any *future* "unit wedged somewhere we did not predict" bug
+    would again become an unkillable battle, so an order that has made no
+    progress for 12 s is dropped and re-planned. This is the backstop, not the
+    fix.
+
+### The ledger
+
+11. **The dead kept taking their AI turn.** The core's AI pass walks the whole
+    array without skipping the dead, and compaction only runs at end of frame —
+    so a man killed earlier in the same pass could still rout, decrementing
+    `alive` for someone already counted in `dead`. Side counts drifted negative
+    (`standing -3`). `update()` returns early for the dead now, and both
+    `_kill` and `_setRout` are idempotent.
+
+### The rest
+
+12. **Battle hotkeys fired while typing in a form field** — pressing "A" in the
+    settings panel selected the whole army.
+13. **Order markers decayed by an assumed 1/60 per draw**, so they lasted twice
+    as long at 30 fps and half as long at 120.
+14. **`App.go()` to a phase with no view tore the current one down first**, then
+    re-entered it on failure. From the menu that was invisible; from a battle it
+    would have thrown the fight away and deployed a new one.
+15. **`FlowField.isFor()` compared against the *resolved* goal**, so any order
+    whose target had to be relocated onto open ground rebuilt an identical
+    field on every issue.
+16. **A save that ran out of quota part-way could leave a `:shadow` key behind**,
+    which the next read would have to step over.
+17. **`RemoteStore` slept out a backoff after its final attempt** before giving
+    up.
+18. **Halting left an order in the queue that could never complete** — the
+    arrival test skips HOLD — so a halted block read as "busy" to anything
+    asking whether it had orders.
+19. **Nothing told the player how to move the camera.** Left-drag is box-select
+    and right-drag is an order, so both are claimed; middle-drag and the wheel
+    were the only ways to pan and neither was mentioned. The hint says so now.
+
+### The original four, from the P1 build
+
+Every one of these also presented as "the battle stalls":
 
 1. **The flow field's heap was keyed by reading `cost[cell]` at compare time.**
    This is decrease-key-by-reinsertion, so improving a cell's cost silently
@@ -294,3 +378,20 @@ and never ends", and none was where it looked:
   replayable. Four movement bugs found and fixed (see above). 51 / 0 on P1,
   45 / 0 / 0 on P0, 23 / 0 on the pages regression. Screenshots in
   `.verify/sanguo-battle-*.png`.
+- **2026-08-30 (cont.)** — bug sweep. 15 more fixed (see above), the worst of
+  them a family of six that all showed up as a battle that would not end: half
+  the seeds tested hung for ever. All 16 seeds now resolve in 30-186 s. Each fix
+  is an assertion in the P1 suite, which is up from 51 to 62.
+
+---
+
+## A caveat about `.verify/`
+
+`.gitignore` excludes `.verify/`, which is the project's existing convention
+(`AGENTS.md` calls it the scratch area). It does mean **the verification suites
+are not committed** — they exist in this working copy only, so a fresh clone
+would have the game but none of its tests. Worth deciding one way or the other
+before that matters; committing `sanguo-p0.js`, `sanguo-p1.js`,
+`pages-regression.js` and `sanguo-seed-sweep.js` would cost little and is what
+the "read PROGRESS.md and run the suites" instruction at the top of this file
+assumes.

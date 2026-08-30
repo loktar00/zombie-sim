@@ -52,6 +52,7 @@
     groups: new Map(),
     drag: null, // { x0, y0, x1, y1 } world-space box while dragging
     marks: [], // recent order markers, decayed for feedback
+    lastT: null, // wall-clock stamp of the last overlay draw
     hoverForm: 0,
     bound: false,
 
@@ -60,6 +61,7 @@
       this.selection.length = 0;
       this.groups.clear();
       this.marks.length = 0;
+      this.lastT = null;
       this.drag = null;
       if (this.bound) return this;
       this.bound = true;
@@ -235,8 +237,21 @@
 
     key(e) {
       if (!this.scen) return;
+      /* Battle hotkeys must not fire while the player is typing or dragging a
+         slider — "A" in the settings panel was selecting the whole army. */
+      const el = e.target;
+      if (
+        el &&
+        (el.isContentEditable ||
+          el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT")
+      ) {
+        return;
+      }
       const eng = ZS.engine;
       const k = e.key;
+      if (typeof k !== "string") return;
       if (k >= "1" && k <= "9") {
         const g = +k;
         if (e.ctrlKey || e.metaKey) {
@@ -282,15 +297,24 @@
 
     /* ---------- world-space overlay ---------- */
 
-    drawWorld(c, scen) {
+    drawWorld(c, scen, t) {
       if (!scen) return;
       this.prune();
       c.lineCap = "round";
 
-      // order markers: a wobbly ring where the last order landed
+      /* Order markers fade on real elapsed time. Subtracting an assumed 1/60
+         per draw made them last twice as long at 30 fps and half as long at
+         120, which is exactly the kind of thing that only shows up on someone
+         else's monitor. */
+      let dt = 0;
+      if (typeof t === "number") {
+        dt = this.lastT === null ? 0 : Math.min(0.25, Math.max(0, t - this.lastT));
+        this.lastT = t;
+      }
+
       for (let i = this.marks.length - 1; i >= 0; i--) {
         const m = this.marks[i];
-        m.t -= 1 / 60;
+        m.t -= dt;
         if (m.t <= 0) {
           this.marks.splice(i, 1);
           continue;

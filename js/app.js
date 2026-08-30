@@ -145,13 +145,14 @@
 
     go(state, payload) {
       if (this.state === state) return false;
-      if (this.view && this.view.exit) this.view.exit();
+      /* Look before tearing anything down. An unbuilt phase (campaign, until
+         P3) must leave the current view exactly as it was — exiting first and
+         re-entering on failure silently restarted whatever was running, which
+         for the battle view meant throwing the fight away and deploying a new
+         one. */
       const next = this.views.get(state);
-      if (!next) {
-        /* An unbuilt phase (campaign in P0). Stay put rather than blanking. */
-        if (this.view && this.view.enter) this.view.enter(payload);
-        return false;
-      }
+      if (!next) return false;
+      if (this.view && this.view.exit) this.view.exit();
       this.state = state;
       this.view = next;
       /* A view may own the frame loop itself — the battle hands it to

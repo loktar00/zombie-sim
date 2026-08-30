@@ -71,6 +71,10 @@
   const HUNT_R = 900;
   const HUNT_CD = 0.7;
   const ARRIVE = 26; // unit centroid within this = the order is done
+  const SLOT_PAD = 30; // no slot is ever placed closer than this to a map edge
+  const STALL_GIVEUP = 12; // seconds of no progress before an order is dropped
+  const STALEMATE = 45; // seconds without a casualty before the field is called
+  const STALEMATE_EDGE = 0.1; // strength gap below which a called field is a draw
 
   const TG = { x: 0, y: 0 }; // scratch: no per-frame allocation
   const FLOW = { x: 0, y: 0 };
@@ -102,6 +106,8 @@
       this.bt = 0;
       this.over = false;
       this.result = -1;
+      this.stalemate = false;
+      this.lastBloodT = 0;
       this.w = 0;
       this.h = 0;
       this.paused = false;
@@ -370,6 +376,11 @@
               : MOVE;
       if (o.form && o.form !== u.form) this.setFormation(u, o.form);
       if (u.st === HOLD) {
+        /* Halting empties the queue rather than occupying it. A hold order can
+           never "complete" — the arrival test skips HOLD — so leaving it in
+           place left the unit permanently carrying one, which reads as "busy"
+           to anything that asks whether it has orders. */
+        u.orders.length = 0;
         u.tx = u.cx;
         u.ty = u.cy;
         u.reach = true;
@@ -389,13 +400,25 @@
        unreachable rather than marched at forever — that is the whole reason
        the movement runs on a field instead of a straight line. */
     _setGoal(u, x, y) {
+      if (!u.ff) u.ff = new ZS.FlowField(this._nav);
+      if (!u.ff.isFor(x, y) && !u.ff.build(x, y)) {
+        u.reach = false;
+        return false;
+      }
+      /* Decide before committing: a refused goal must leave the unit's
+         existing orders untouched, or a HOLD block ends up carrying a stale
+         destination it will never march to. */
+      if (u.ff.distAt(u.cx, u.cy) === Infinity) {
+        u.reach = false;
+        return false;
+      }
       u.tx = x;
       u.ty = y;
       u.turn = Math.atan2(y - u.cy, x - u.cx);
-      if (!u.ff) u.ff = new ZS.FlowField(this._nav);
-      if (!u.ff.isFor(x, y)) u.ff.build(x, y);
-      u.reach = u.ff.distAt(u.cx, u.cy) < Infinity;
-      return u.reach;
+      u.reach = true;
+      u.best = Infinity; // a fresh goal gets a fresh progress watchdog
+      u.stallT = 0;
+      return true;
     }
 
     _nextOrder(u) {
@@ -528,12 +551,37 @@
         dy = u.ty - u.cy;
       const d = Math.hypot(dx, dy);
       /* Nothing to march at: end the order so the next plan picks a target
-         this unit can actually walk to. */
-      if (u.st !== HOLD && !u.reach) {
-        u.hunting = false;
-        this._nextOrder(u);
-        return;
+         this unit can actually walk to. Re-read from the field rather than
+         trusting the flag set when the order was issued — a block can be
+         pushed into a pocket it cannot path out of after the fact, and one
+         array index is cheaper than discovering it by never arriving. */
+      if (u.st !== HOLD) {
+        u.reach = !u.ff || u.ff.distAt(u.cx, u.cy) < Infinity;
+        if (!u.reach) {
+          u.hunting = false;
+          this._nextOrder(u);
+          return;
+        }
       }
+      /* Progress watchdog. A marching block that has come no closer to its
+         goal for a while has met something the planner did not predict; drop
+         the order so the next plan can try something else. Without this any
+         future "unit wedged somewhere unexpected" bug becomes a battle that
+         never ends, which is the worst way for one to fail. */
+      if (u.st !== HOLD) {
+        if (d < u.best - 4) {
+          u.best = d;
+          u.stallT = 0;
+        } else {
+          u.stallT += dt;
+          if (u.stallT > STALL_GIVEUP) {
+            u.hunting = false;
+            this._nextOrder(u);
+            return;
+          }
+        }
+      }
+
       if (u.st !== HOLD && d < ARRIVE) {
         if (u.hunting) {
           u.hunting = false;
@@ -581,24 +629,41 @@
 
     /* A side is beaten when nobody on it is still fighting: the men are dead,
        fled the field, or running. Cannae waits for literal annihilation; a
-       skirmish that ends on the rout is the same story told at battle length. */
+       skirmish that ends on the rout is the same story told at battle length.
+
+       And a battle that neither side can finish still has to end. Two spent
+       remnants that cannot reach or break each other would otherwise run for
+       ever — so a field where nobody has fallen for STALEMATE seconds is
+       called: the stronger remnant holds it, or it is a draw if they are
+       evenly matched. `BattleResult.winner` already admits "draw" (§4.3). */
     _checkEnd() {
       if (this.over) return;
       for (let s = 0; s < 2; s++) {
         if (this.sides[s].total0 > 0 && this.sides[s].alive <= 0) {
-          this.over = true;
-          this.result = 1 - s;
-          this.overT = this.bt;
-          for (const u of this.units) {
-            if (u.side === s) continue;
-            u.st = HOLD;
-            u.orders.length = 0;
-            u.tx = u.cx;
-            u.ty = u.cy;
-            u.turn = null;
-          }
-          break;
+          this._finish(1 - s);
+          return;
         }
+      }
+      if (this.bt - this.lastBloodT > STALEMATE) {
+        const a0 = this.sides[0].alive,
+          a1 = this.sides[1].alive;
+        const gap = Math.abs(a0 - a1) / Math.max(1, a0 + a1);
+        this._finish(gap < STALEMATE_EDGE ? -1 : a0 > a1 ? 0 : 1, true);
+      }
+    }
+
+    _finish(winner, stalemate) {
+      this.over = true;
+      this.result = winner;
+      this.stalemate = !!stalemate;
+      this.overT = this.bt;
+      for (const u of this.units) {
+        if (u.st === ROUT || u.side === 1 - winner) continue;
+        u.st = HOLD;
+        u.orders.length = 0;
+        u.tx = u.cx;
+        u.ty = u.cy;
+        u.turn = null;
       }
     }
 
@@ -641,12 +706,22 @@
           }
           if (u.reach) break;
         }
+        /* Every candidate refused: rather than stand in whatever corner it
+           chased its last target into, fall back to the middle of the field
+           where the enemy actually is. */
+        if (!u.reach && this.field) this.order(u, "attack", this.field.x, this.field.y);
       }
     }
 
     /* ---------- contract: per-agent AI ---------- */
 
     update(a, dt, t, grid, nav, _world, _buildings, _wave) {
+      /* The core's AI pass walks the whole array and does not skip the dead —
+         a man killed earlier in this same pass still gets his turn, and the
+         compaction that removes him only runs at the end of the frame. Left
+         alone he could rout after dying, decrementing `alive` for a man
+         already counted in `dead`, and the side ledger drifted negative. */
+      if (a.dead) return;
       a.rallyT = Math.max(0, a.rallyT - dt);
       const u = this.units[a.un];
       // fatigue accrues while sprinting or swinging, and recovers standing still
@@ -671,8 +746,13 @@
     _seekSlot(a, u, dt, sp, faceHead) {
       const ch = Math.cos(u.head),
         sh = Math.sin(u.head);
-      const sx = u.cx + a.sx * sh + a.sy * ch;
-      const sy = u.cy - a.sx * ch + a.sy * sh;
+      /* Slot targets are clamped inside the field. A block driven into a
+         corner otherwise puts half its slots outside the world; those men
+         cannot reach them, keep pulling outward, and because the slot pull
+         (SEP_SLOT) is stronger than the march drive the whole block deadlocks
+         against the edge and the battle can never end. */
+      const sx = ZS.clamp(u.cx + a.sx * sh + a.sy * ch, SLOT_PAD, this.w - SLOT_PAD);
+      const sy = ZS.clamp(u.cy - a.sx * ch + a.sy * sh, SLOT_PAD, this.h - SLOT_PAD);
       a.sx2 = sx;
       a.sy2 = sy;
       const dx = sx - a.x,
@@ -756,7 +836,18 @@
           be = b;
         }
       });
-      if (be) {
+      /* A man in reach is struck either way — a spear in the back of someone
+         running is the cheapest kill on the field. What changes is whether he
+         is worth *stopping* for. */
+      if (be && a.atkCd <= 0 && bd < reach * reach) {
+        a.atkCd = ATK_CD[a.type] * (0.8 + ZS.hash(a.seed) * 0.5);
+        a.atk = 0.16;
+        a.fatigue = Math.min(1, a.fatigue + 0.012);
+        this._hit(a, be, DMG[a.type]);
+      }
+
+      if (be && !be.fleeing) {
+        /* A fighting line: brace, close the last few px, hold the front. */
         u.contact = 0.6;
         a.a = Math.atan2(be.y - a.y, be.x - a.x);
         const d = Math.sqrt(bd);
@@ -768,13 +859,12 @@
           a.vy += Math.sin(a.a) * 46 * dt;
           a.wantMove = true;
         }
-        if (a.atkCd <= 0 && d < reach) {
-          a.atkCd = ATK_CD[a.type] * (0.8 + ZS.hash(a.seed) * 0.5);
-          a.atk = 0.16;
-          a.fatigue = Math.min(1, a.fatigue + 0.012);
-          this._hit(a, be, DMG[a.type]);
-        }
       } else {
+        /* Nobody, or only men running away: keep the stride and the shape.
+           Braking for routers froze whole blocks mid-march (the drive said 43
+           px/s while the men moved at 4), and chasing them individually tore
+           formations apart across the field. Pursuit is a *unit* decision —
+           see the hunt in _driveUnit — not something each man freelances. */
         this._seekSlot(a, u, dt, SEP_SLOT, true);
         if (a.stuckT > 1.2) {
           TG.x = a.sx2;
@@ -801,7 +891,25 @@
           be = b;
         }
       });
-      if (be) {
+      if (be && be.fleeing && bd > SHOOT_MIN[a.type] * SHOOT_MIN[a.type]) {
+        // shoot him in the back, but do not give ground for him
+        if (a.thrCd <= 0) {
+          a.thrCd = SHOOT_CD[a.type] * (0.85 + ZS.hash(a.seed) * 0.3);
+          a.thr = 0.22;
+          a.a = Math.atan2(be.y - a.y, be.x - a.x);
+          this.fx.push({
+            x0: a.x + Math.cos(a.a) * 10,
+            y0: a.y - 8,
+            x1: be.x,
+            y1: be.y - 4,
+            t: 0.22,
+            bolt: true,
+            seed: this.rnd(0, 997),
+          });
+          this._hit(a, be, 1);
+        }
+        this._seekSlot(a, u, dt, 40, true);
+      } else if (be) {
         a.a = Math.atan2(be.y - a.y, be.x - a.x);
         const d = Math.sqrt(bd);
         if (d < SHOOT_MIN[a.type]) {
@@ -867,7 +975,7 @@
           });
           if (be) {
             a.hitCd = 0.4;
-            u.contact = 0.6;
+            if (!be.fleeing) u.contact = 0.6;
             this._hit(a, be, DMG[a.type]);
             be.vx += Math.cos(u.head) * 130;
             be.vy += Math.sin(u.head) * 130;
@@ -906,8 +1014,10 @@
     }
 
     _kill(a, killer) {
+      if (a.dead) return; // two men can land the killing blow in one frame
       a.dead = true;
       a.hp = 0;
+      this.lastBloodT = this.bt;
       const s = this.sides[a.side];
       s.dead++;
       // invariant: dead + routed + alive = total0
@@ -920,7 +1030,7 @@
     }
 
     _setRout(a) {
-      if (a.routFlag) return;
+      if (a.routFlag || a.dead) return;
       a.routFlag = 1;
       a.fleeing = true;
       a.free = true;
@@ -1001,6 +1111,8 @@
         huntT: 0,
         ff: null,
         reach: true,
+        best: Infinity, // closest this unit has come to its current goal
+        stallT: 0, // seconds since that got any better
         sel: false,
         mem: [],
         typeSpd: SPD[type],
@@ -1231,7 +1343,9 @@
       this.bt = 0;
       this.over = false;
       this.result = -1;
+      this.stalemate = false;
       this.overT = 0;
+      this.lastBloodT = 0;
       this.aiT = 1.5;
       this.units = [];
       this.nextUid = 1;
@@ -1320,11 +1434,14 @@
         legend: (cc, y, fs) => this._legend(cc, y, fs),
         overlay: () => {
           if (!this.over) return null;
+          const draw = this.result < 0;
           const win = this.result === 0;
           const lost = this.sides[win ? 1 : 0];
           return {
-            main: t(win ? "battle.win" : "battle.lose"),
-            sub: t("battle.result", { dead: lost.dead, fled: lost.routed + lost.gone }),
+            main: t(draw ? "battle.draw" : win ? "battle.win" : "battle.lose"),
+            sub: this.stalemate
+              ? t("battle.stalemate")
+              : t("battle.result", { dead: lost.dead, fled: lost.routed + lost.gone }),
           };
         },
       };
@@ -1402,8 +1519,8 @@
     }
 
     /* Runs every frame, in world space, effects or not (js/draw.js). */
-    drawWorld(c) {
-      if (ZS.Command) ZS.Command.drawWorld(c, this);
+    drawWorld(c, t) {
+      if (ZS.Command) ZS.Command.drawWorld(c, this, t);
     }
   }
 

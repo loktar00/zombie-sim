@@ -68,10 +68,12 @@
     "battle.hint":
       "drag to select · right-click to attack · A all · H halt · F formation · space pauses",
     "battle.hint.selected":
-      "{n} selected · right-click attacks · ctrl+right marches · shift queues · ctrl+digit groups",
+      "{n} selected · right-click attacks · ctrl+right marches · shift queues · ctrl+digit groups · middle-drag pans",
     "battle.win": "The field is yours",
     "battle.lose": "Your line is broken",
     "battle.result": "{dead} of theirs dead · {fled} fled",
+    "battle.draw": "Neither line breaks",
+    "battle.stalemate": "Nobody could press it · both armies drew off",
     "battle.quit": "Leave the field",
     "battle.speed": "{n}x",
     "battle.paused": "Paused",

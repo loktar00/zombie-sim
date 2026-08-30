@@ -160,8 +160,15 @@
          readable save. */
       const prev = await st.get(key);
       await st.set(key + ":shadow", text);
-      if (prev !== null) await st.set(key + ":bak", prev);
-      await st.set(key, text);
+      try {
+        if (prev !== null) await st.set(key + ":bak", prev);
+        await st.set(key, text);
+      } catch (e) {
+        /* Out of quota part-way through: drop the shadow so the next read does
+           not see a half-finished write, and let the caller hear about it. */
+        await st.remove(key + ":shadow").catch(() => {});
+        throw e;
+      }
       await st.remove(key + ":shadow");
     },
 

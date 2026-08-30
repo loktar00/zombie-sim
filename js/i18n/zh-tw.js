@@ -64,11 +64,15 @@
 
     "battle.title": "沙場試鋒",
     "battle.stats": "我軍 {own}（歿 {ownLost}） · 敵軍 {foe}（歿 {foeLost}） · {time}",
-    "battle.hint": "左鍵框選 · 右鍵進擊 · A 全選 · H 止步 · F 陣形 · 空白鍵暫停",
-    "battle.hint.selected": "已選 {n} 隊 · 右鍵進擊 · Ctrl+右鍵行軍 · Shift 續令 · Ctrl+數字編隊",
+    "battle.hint":
+      "左鍵框選 · 右鍵進擊 · 中鍵拖曳移動視角 · 滾輪縮放 · A 全選 · H 止步 · F 陣形 · 空白鍵暫停",
+    "battle.hint.selected":
+      "已選 {n} 隊 · 右鍵進擊 · Ctrl+右鍵行軍 · Shift 續令 · Ctrl+數字編隊 · 中鍵拖曳移動視角",
     "battle.win": "我軍得勝",
     "battle.lose": "我軍潰敗",
     "battle.result": "敵軍 {dead} 歿 · {fled} 潰散",
+    "battle.draw": "兩軍相持",
+    "battle.stalemate": "無人再進 · 各自收兵",
     "battle.quit": "退出戰場",
     "battle.speed": "{n} 倍速",
     "battle.paused": "暫停",

@@ -83,8 +83,7 @@
     drawWeapon(c, a, hx, hy, k);
 
     // face: one dot on the forward side
-    const ca = Math.cos(a.a),
-      sa = Math.sin(a.a);
+    const ca = Math.cos(a.a);
     c.fillStyle = INK;
     c.beginPath();
     c.arc(hx + ca * 1.6 * k - 0.8, hy - 0.6, 0.6 * k, 0, 6.29);
@@ -92,7 +91,6 @@
     c.beginPath();
     c.arc(hx + ca * 1.6 * k + 0.9, hy - 0.3, 0.6 * k, 0, 6.29);
     c.fill();
-    void sa;
   }
 
   /* ---------- weapons: the type read (§7.3) ---------- */

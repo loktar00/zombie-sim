@@ -68,7 +68,8 @@
         } catch (e) {
           if (e.code === "http" || e.code === "conflict") throw e;
           lastErr = e;
-          await sleep(BACKOFF_MS * Math.pow(2, attempt));
+          // no point waiting out a backoff we are never going to use
+          if (attempt < RETRIES - 1) await sleep(BACKOFF_MS * Math.pow(2, attempt));
         }
       }
       const err = new Error("store_unreachable");
