@@ -1,4 +1,4 @@
-/* ZS.FlowField — group movement without per-agent A* (SANGUO-DESIGN.md §4.4).
+/* ZS.FlowField — group movement without per-agent A* (docs/SANGUO-DESIGN.md §4.4).
 
    `ZS.Nav.astar` is a fine path for one man and a terrible one for two hundred
    moving to the same place: the same search, two hundred times, against a

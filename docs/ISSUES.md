@@ -89,7 +89,7 @@ it. It has already happened once: the P1 battle strings added 44 glyphs outside
 the subset.
 
 Rebuilding also needs the ~15 MB source face re-downloaded (deliberately not
-committed — see `fonts/README.md`), so the fix is not something a contributor
+committed — see `FONTS.md`), so the fix is not something a contributor
 can do without going and fetching it.
 
 **Options:** a pre-commit hook running `--check`; or CI; or accept the P0 suite

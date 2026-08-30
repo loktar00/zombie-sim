@@ -1,4 +1,4 @@
-/* 繁體中文 (zh-tw) — the default locale (SANGUO-DESIGN.md §6).
+/* 繁體中文 (zh-tw) — the default locale (docs/SANGUO-DESIGN.md §6).
    This file and js/i18n/en.js are the only places UI chrome strings live;
    people/place/skill names are bilingual data in js/campaign/data/*.js. */
 (() => {

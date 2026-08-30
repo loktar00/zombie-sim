@@ -1,5 +1,5 @@
 /* ZS.Fonts — brush-kai loading for a page that must survive file://
-   (SANGUO-DESIGN.md §6.3).
+   (docs/SANGUO-DESIGN.md §6.3).
 
    The chosen face is LXGW WenKai TC (霞鶩文楷, SIL OFL 1.1), shipped as an
    asset-time glyph subset rather than the ~15 MB full font.

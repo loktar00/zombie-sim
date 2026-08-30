@@ -1,4 +1,4 @@
-/* ZS.BattleMorale — unit morale / rout / rally (SANGUO-DESIGN.md §4.4).
+/* ZS.BattleMorale — unit morale / rout / rally (docs/SANGUO-DESIGN.md §4.4).
  *
  * Morale belongs to the block, not to 4 000 individual figures. The scenario
  * reports casualties and flank/rear hits here; this system samples the small

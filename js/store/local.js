@@ -1,4 +1,4 @@
-/* ZS.LocalStore — localStorage backing for ZS.Store (SANGUO-DESIGN.md §5.2).
+/* ZS.LocalStore — localStorage backing for ZS.Store (docs/SANGUO-DESIGN.md §5.2).
 
    Dumb key/blob persistence, exactly the ZS.Store contract. It declares
    `atomic:false`, which is the signal SaveManager reads to run its

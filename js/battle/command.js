@@ -1,4 +1,4 @@
-/* ZS.Command — selection and orders (SANGUO-DESIGN.md §4.4).
+/* ZS.Command — selection and orders (docs/SANGUO-DESIGN.md §4.4).
 
    The difference between watching a battle and commanding one. Cannae's units
    run a script; here the player picks blocks up and tells them where to go,

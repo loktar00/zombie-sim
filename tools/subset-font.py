@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the brush-kai glyph subset the game ships (SANGUO-DESIGN.md §6.3).
+"""Build the brush-kai glyph subset the game ships (docs/SANGUO-DESIGN.md §6.3).
 
 Dev tooling, same category as oxfmt/oxlint — it is NOT part of running the
 game. Run it whenever js/i18n/*.js or js/campaign/data/*.js gains new text.
@@ -146,7 +146,7 @@ def main() -> int:
         "   LXGW WenKai TC (霞鶩文楷), SIL Open Font License 1.1.\n"
         f"   Subset of {len(chars)} glyphs, {kb:.0f} KB woff2, as a data: URI so the\n"
         "   page gets real kai when double-clicked (file:// refuses a CORS-mode\n"
-        "   @font-face fetch). See SANGUO-DESIGN.md §6.3. */\n"
+        "   @font-face fetch). See docs/SANGUO-DESIGN.md §6.3. */\n"
         "(() => {\n"
         '  "use strict";\n'
         "  const ZS = (window.ZS = window.ZS || {});\n"

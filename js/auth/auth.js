@@ -1,4 +1,4 @@
-/* ZS.Auth — the identity seam (SANGUO-DESIGN.md §5.5).
+/* ZS.Auth — the identity seam (docs/SANGUO-DESIGN.md §5.5).
 
    Stage 1 (now): AnonAuth. No accounts, no login. First run mints a random
    deviceId into "hsg:v1:device"; it is the principal stamped on every snapshot

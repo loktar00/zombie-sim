@@ -1,5 +1,5 @@
 /* English (en) — the secondary locale, and the fallback table any missing
-   zh-tw key resolves through (SANGUO-DESIGN.md §6.1). Keep the key set in
+   zh-tw key resolves through (docs/SANGUO-DESIGN.md §6.1). Keep the key set in
    lockstep with js/i18n/zh-tw.js. */
 (() => {
   "use strict";

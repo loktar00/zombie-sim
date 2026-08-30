@@ -1,4 +1,4 @@
-/* ZS.App — the shell (SANGUO-DESIGN.md §2).
+/* ZS.App — the shell (docs/SANGUO-DESIGN.md §2).
 
    One page, several views, only ever one of them running:
 
@@ -173,7 +173,7 @@
       this.view = next;
       /* A view may own the frame loop itself — the battle hands it to
          js/main.js, which is the engine's. Two loops are never live at once
-         (SANGUO-DESIGN.md §2: the other view is fully torn down). */
+         (docs/SANGUO-DESIGN.md §2: the other view is fully torn down). */
       if (next.ownsLoop) this.stop();
       if (next.resize) next.resize(this.W, this.H);
       if (next.enter) next.enter(payload);

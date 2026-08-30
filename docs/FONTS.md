@@ -8,7 +8,7 @@ The game's brush-kai face (`SANGUO-DESIGN.md` §6.3).
 |---|---|
 | Upstream | <https://github.com/lxgw/LxgwWenkaiTC> |
 | Version | v1.522 (`LXGWWenKaiTC-Regular.ttf`, 25 764 glyphs, ~15 MB) |
-| Licence | SIL Open Font License 1.1 — full text in [`OFL.txt`](OFL.txt) |
+| Licence | SIL Open Font License 1.1 — full text in [`OFL.txt`](../fonts/OFL.txt) |
 
 ### What is committed here
 

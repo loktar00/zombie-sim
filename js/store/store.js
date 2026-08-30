@@ -1,4 +1,4 @@
-/* ZS.Store — the persistence seam (SANGUO-DESIGN.md §5.2).
+/* ZS.Store — the persistence seam (docs/SANGUO-DESIGN.md §5.2).
 
    A Store is dumb key/blob persistence. Gameplay code NEVER touches
    localStorage or fetch directly; it goes through ZS.SaveManager, which talks

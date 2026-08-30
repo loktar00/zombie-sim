@@ -1,4 +1,4 @@
-/* ZS.UI — the DOM overlay (SANGUO-DESIGN.md §2, §6.1).
+/* ZS.UI — the DOM overlay (docs/SANGUO-DESIGN.md §2, §6.1).
 
    The canvas draws the world and the title; everything you click is DOM. That
    buys focus order, keyboard access, and `data-i18n` re-fill on a locale

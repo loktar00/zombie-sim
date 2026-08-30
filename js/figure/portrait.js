@@ -1,6 +1,6 @@
 /* ZS.portrait — headshot portraits for the named generals.
  *
- * SANGUO-DESIGN.md §7.5 deliberately keeps the battle figure a single
+ * docs/SANGUO-DESIGN.md §7.5 deliberately keeps the battle figure a single
  * silhouette (no portraits, no unique bodies). The portraits live outside the
  * battle — they are drawn in the menu's "Choose your warlord" panel, the
  * after-action card, the save-slot icon, the campaign roster, and any cutaway

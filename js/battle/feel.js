@@ -1,4 +1,4 @@
-/* ZS.BattleFeel — transient battle feedback (SANGUO-DESIGN.md §4.4).
+/* ZS.BattleFeel — transient battle feedback (docs/SANGUO-DESIGN.md §4.4).
  *
  * Simulation emits discrete events; this layer turns only the important ones
  * into a proportional bundle: charge = directional burst + light trauma,

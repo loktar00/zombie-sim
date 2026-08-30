@@ -1,4 +1,4 @@
-/* ZS.boilText — canvas text in the boiling-line style (SANGUO-DESIGN.md §6.3).
+/* ZS.boilText — canvas text in the boiling-line style (docs/SANGUO-DESIGN.md §6.3).
 
    The sketch primitives wobble; system-rendered glyphs do not, so a plain
    fillText sits dead on the paper next to them. Drawing per glyph with a tiny

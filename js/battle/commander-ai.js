@@ -1,4 +1,4 @@
-/* ZS.SanguoCommanderAI — enemy command brain (SANGUO-DESIGN.md §4.4).
+/* ZS.SanguoCommanderAI — enemy command brain (docs/SANGUO-DESIGN.md §4.4).
  *
  * Decision and motion stay separate: this module chooses a block-level intent;
  * ScenarioSanguo.order() and the existing flow fields carry it out. A shallow

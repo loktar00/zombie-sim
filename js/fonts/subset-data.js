@@ -2,7 +2,7 @@
    LXGW WenKai TC (霞鶩文楷), SIL Open Font License 1.1.
    Subset of 546 glyphs, 140 KB woff2, as a data: URI so the
    page gets real kai when double-clicked (file:// refuses a CORS-mode
-   @font-face fetch). See SANGUO-DESIGN.md §6.3. */
+   @font-face fetch). See docs/SANGUO-DESIGN.md §6.3. */
 (() => {
   "use strict";
   const ZS = (window.ZS = window.ZS || {});

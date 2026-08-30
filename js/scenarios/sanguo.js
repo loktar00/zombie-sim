@@ -1,4 +1,4 @@
-/* SCENARIO PACK: 火柴三國 — the real-time battle (SANGUO-DESIGN.md §4.4)
+/* SCENARIO PACK: 火柴三國 — the real-time battle (docs/SANGUO-DESIGN.md §4.4)
  *
  * Cannae taught this engine how to fight a large battle; this pack keeps the
  * machinery and takes the script away. In `cannae.js` every unit runs a baked

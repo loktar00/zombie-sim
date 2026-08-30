@@ -1,4 +1,4 @@
-/* ZS.i18n — localization (SANGUO-DESIGN.md §6).
+/* ZS.i18n — localization (docs/SANGUO-DESIGN.md §6).
 
    zh-tw is the default and the design language; en is the fallback table for
    any key zh-tw is missing (a dev safety net, never the default shown).

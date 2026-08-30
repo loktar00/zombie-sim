@@ -355,7 +355,7 @@ suites are not committed) is waiting on a call about repo layout.
   `python tools/subset-font.py --check`. Rebuilding needs the source face
   (LXGWWenKaiTC-Regular.ttf v1.522, ~15 MB) re-downloaded from
   <https://github.com/lxgw/LxgwWenkaiTC/releases> — it is deliberately not
-  committed. See `fonts/README.md`.
+  committed. See `FONTS.md`.
 
 ---
 

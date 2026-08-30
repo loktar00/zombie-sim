@@ -1,5 +1,5 @@
 /* ZS.SaveManager — the only persistence surface gameplay code may touch
-   (SANGUO-DESIGN.md §5).
+   (docs/SANGUO-DESIGN.md §5).
 
    It owns the schema, the migration chain, and the durability dance; the Store
    under it stays dumb. Switching local -> server is `bind(otherStore)` at boot

@@ -1,4 +1,4 @@
-/* ZS.RemoteStore — optional server backing for ZS.Store (SANGUO-DESIGN.md §5.2, §5.5).
+/* ZS.RemoteStore — optional server backing for ZS.Store (docs/SANGUO-DESIGN.md §5.2, §5.5).
 
    Never required: the game is fully playable with LocalStore forever. This
    exists so switching backends is one line at boot. Wire-up is deliberately

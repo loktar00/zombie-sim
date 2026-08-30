@@ -1,4 +1,4 @@
-/* ZS.BattleAbilities — active general abilities (SANGUO-DESIGN.md §4.2).
+/* ZS.BattleAbilities — active general abilities (docs/SANGUO-DESIGN.md §4.2).
  *
  * P2 starts with one data-defined active: inspire. The selected unit's
  * commander (or the first living player commander) spends a cooldown to

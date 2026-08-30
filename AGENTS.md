@@ -2,11 +2,11 @@
 
 A hand-drawn, "boiling line" sketch-style sim. Four HTML pages share one
 core: `index.html` (火柴三國 / Matchstick Three Kingdoms, a turn-based campaign
-RPG wrapped around real-time battles — design in SANGUO-DESIGN.md, the art
-system in SANGUO-ART.md, build status in PROGRESS.md, open items in
-ISSUES.md), `zombiesim.html` (the outbreak, a zombie horde in a paper
+RPG wrapped around real-time battles — design in docs/SANGUO-DESIGN.md, the art
+system in docs/SANGUO-ART.md, build status in docs/PROGRESS.md, open items in
+docs/ISSUES.md), `zombiesim.html` (the outbreak, a zombie horde in a paper
 town), `battle.html` (Cannae, 216 BC, 781-figure battle), and `hold.html`
-(The Hold, a tile-based zombie clicker — design in HOLD-DESIGN.md). Vanilla
+(The Hold, a tile-based zombie clicker — design in docs/HOLD-DESIGN.md). Vanilla
 JS, Canvas 2D. No framework, no build step, no bundler — and it must stay
 that way (see Hard constraints).
 
@@ -271,7 +271,7 @@ pack shapes: tracer `{x0,y0,x1,y1,t}`, poof `{x,y,t,poof,seed}`, blood
   0.75, `SLNG_R` 190, `EXIT_PAD` 30, `HUNT_R` 900. A full battle runs
   ~60-100 s; the check script asserts 45-180 s.
 
-## 火柴三國 (`index.html`, design in `SANGUO-DESIGN.md`, art in `SANGUO-ART.md`, status in `PROGRESS.md`)
+## 火柴三國 (`index.html`, design in `docs/SANGUO-DESIGN.md`, art in `docs/SANGUO-ART.md`, status in `docs/PROGRESS.md`)
 
 A hybrid: a turn-based map-strategy RPG whose battles drop into the Cannae
 engine in real time. It is the only page with a shell (`ZS.App`: MENU →
@@ -321,7 +321,7 @@ it runs on a fixed 1/30 s step, which is also what makes the active pause and
 
 The page ships a brush-kai face — **LXGW WenKai TC (霞鶩文楷), SIL OFL 1.1** —
 as a glyph subset cut to exactly the game's vocabulary (`fonts/`, licence and
-rebuild instructions in `fonts/README.md`). It is committed twice: as a
+rebuild instructions in `docs/FONTS.md`). It is committed twice: as a
 `.woff2` for the `@font-face` rule, and as a `data:` URI in
 `js/fonts/subset-data.js`, because a CORS-mode font fetch from a `file://`
 opaque origin is refused and constraint 1 says the page must stay
@@ -329,11 +329,11 @@ double-clickable. **Re-run `python tools/subset-font.py --check` after adding
 text to `js/i18n/*.js` or `js/campaign/data/*.js`** — new glyphs fall back
 silently otherwise.
 
-## Hold pack (`js/scenarios/hold.js`, design in `HOLD-DESIGN.md`)
+## Hold pack (`js/scenarios/hold.js`, design in `docs/HOLD-DESIGN.md`)
 
 A sketch-style zombie clicker: one ring of soldiers on a 1600×1200 tile
 world (40×30 of 40px tiles), day/economy → night/horde loop. Build is in
-progress per HOLD-DESIGN.md — P1 (tiles + dig) is done: drag the ground to
+progress per docs/HOLD-DESIGN.md — P1 (tiles + dig) is done: drag the ground to
 dig water/sand/road (5 dig per tile, 20 per day, keys 1–4); water is a hard
 block in the nav grid so a dug moat holds. Still to come: blocks/economy/
 save (P2), the soldier ring + upgrades (P3), night waves + the dawn report

@@ -1,4 +1,4 @@
-/* ZS.figure — the stickman baseline (SANGUO-DESIGN.md §7).
+/* ZS.figure — the stickman baseline (docs/SANGUO-DESIGN.md §7).
 
    §7 freezes the Cannae matchstick figure as *the* spec: one body, and every
    unit type, rank and faction is a small cheap variation on it. This file is

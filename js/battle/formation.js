@@ -1,4 +1,4 @@
-/* ZS.Formation — formations as data (SANGUO-DESIGN.md §4.4).
+/* ZS.Formation — formations as data (docs/SANGUO-DESIGN.md §4.4).
 
    Cannae bakes each unit's shape into its deployment; here a formation is a
    pure slot-offset generator the player can change mid-battle. Offsets are
