@@ -120,8 +120,10 @@ paper map: wobbly province borders (`wpoly`), ink city glyphs, a brushed river.
 Camera is the existing `ZS.Camera` with the world sized to the map bitmap.
 
 **Faction (the player + AI warlords).** Owns provinces, a treasury (金), food
-(糧), a general roster, and armies. The classic three — 魏 / 蜀 / 吳 — plus
-群雄 minor warlords as a start pool.
+(糧), a general roster, and armies. **Start = 194 CE**, so factions are the
+*warlords* of that year, not the later kingdoms: 曹操, 袁紹, 袁術, 呂布,
+劉表, 劉備 (weak), 孫策/孫氏, 劉璋, 馬騰, 公孫瓚, 陶謙… The player picks one.
+(魏/蜀/吳 as states never appear — the game ends by conquest before then.)
 
 **Armies.** A stack of troops + **1–3 assigned generals** + a composition
 (spear / dao / crossbow / cavalry ratios). Armies sit in a province or march
@@ -129,15 +131,23 @@ along an edge. Two hostile armies in the same province at resolve →
 **battle** (§4.3).
 
 **Scale (DECIDED — Q2: 1 figure = 1 man).** Troop counts are literal men, and
-each man is one drawn figure in battle. So the numbers are small and
-matchstick-scaled by design: a field army is **~120–500 men**, a strong
-province garrison ~80–300, an early "army" you can first afford ~60–120. The
-battle view fields at most **~1 000 figures total** (perf ceiling, `AGENTS.md`
-— and battles are usually played zoomed-in, which has headroom). If a stack
-exceeds the on-field cap (~500/side) the overflow deploys as **reserves** that
-reinforce from the back edge during the fight (the Cannae `maintain`
-edge-reinforcement path already does this). No abstract-count ↔ figure
-conversion anywhere — losses, kills and captures are all 1:1.
+each man is one drawn figure in battle. No abstract-count ↔ figure conversion
+anywhere — losses, kills and captures are all 1:1.
+
+- **On-field cap: `FIELD_CAP = 2000` per side** (≈ 4 000 figures in a big
+  set-piece). A stack over the cap deploys the overflow as **reserves** that
+  reinforce from the back edge mid-fight (the Cannae `maintain` path already
+  does this).
+- Army sizes therefore run **~200 men (first affordable) → ~4 000 (a stacked
+  main force)**; a strong province garrison ~300–1 500.
+- **Perf caveat.** 4 000 agents is ~4–5× the engine's proven envelope
+  (`AGENTS.md`: 910 agents ≈ 40–50 fps fit-view). Hitting frame rate at
+  `FIELD_CAP = 2000` is a **P2 deliverable, not an assumption** — it needs the
+  fixed sim-step (§8), flow-field group movement (no per-agent A*), cheap
+  slot-follow AI, and **render LOD** (distant ranks drawn as a few `wpoly`
+  block-shapes / a hatched mass, full stickmen only near the camera). If P2
+  can't hold ~60 fps at 2000, the fallback is `FIELD_CAP ≈ 800` with the same
+  reserve mechanic — the design doesn't change, only the number.
 
 **Generals are the RPG characters.** This is where the `rpg` skill applies —
 derived stats from base attributes, an XP curve, an equipment/skill modifier
@@ -210,10 +220,10 @@ strong passive.
 }
 ```
 
-`onField = min(troops, FIELD_CAP≈500)`, `reserve = troops - onField` (feeds in
+`onField = min(troops, FIELD_CAP=2000)`, `reserve = troops - onField` (feeds in
 via the Cannae `maintain` edge path). 1 man = 1 figure — `comp` percentages
 become integer per-type men directly, and the Cannae formation code already
-lays men into slots.
+lays men into slots. (`FIELD_CAP` is provisional — see the perf caveat in §4.1.)
 
 **Field kinds (DECIDED — Q4), each reusing an existing page's terrain:**
 
@@ -533,11 +543,17 @@ wobbles *stably* (no per-frame reseed).
 ```
 paper      #f3edde     ink        #3d342b     ink-soft  rgba(61,52,43,0.5)
 blood      (reuse Outbreak fx)    dust       rgba(120,110,90,0.5)
-faction sash / banner fills (low-alpha wash + ink outline):
-  魏 Wèi   blue   rgba(70,96,150,0.85)
-  蜀 Shǔ   green  rgba(64,132,74,0.85)
-  吳 Wú    red    rgba(150,54,44,0.85)
-  群 misc  ochre  rgba(150,120,60,0.85)
+```
+
+**Faction colours** — each warlord faction gets one colour from a fixed
+~8-entry ramp, assigned at campaign start (player faction always gets the same
+slot). Used for the sash `wline`, the name banner cloth, and the map province
+fill (all as a low-alpha wash + ink outline):
+
+```
+blue rgba(70,96,150) · green rgba(64,132,74) · red rgba(150,54,44) ·
+ochre rgba(150,120,60) · violet rgba(120,80,140) · teal rgba(60,130,130) ·
+brown rgba(120,86,60) · slate rgba(96,104,120)
 ```
 
 Ground/terrain washes stay in the existing register (water/grass/tree/tan).
@@ -595,6 +611,11 @@ with the dynamic tokens drawn on top each frame.
 - Determinism: seeded `ZS.rng32(battleSeed)` threaded through the pack; assert
   in `.verify/` that a fixed setup + fixed order log → identical `BattleResult`
   across runs.
+- **Render LOD** (needed for `FIELD_CAP = 2000`, §4.1): the draw pass buckets
+  visible agents by camera distance — near = full boiling stickman, mid =
+  head+torso+weapon only, far = the unit's rank drawn as 2–3 `wpoly`
+  mass-shapes with a hatched fill and one banner. Sim fidelity is unchanged;
+  only the drawing degrades with distance. The existing camera cull stays.
 
 ---
 
@@ -646,7 +667,7 @@ everything else is new top-level code on `window.ZS`.
 |---|---|---|
 | **P0** | `sanguo.html` boots to a MENU; LXGW WenKai TC subset loads via local `@font-face`; `ZS.i18n` zh-tw/en toggle; `ZS.Auth`=`AnonAuth` mints a `deviceId`; `ZS.Store`+`LocalStore`+`SaveManager` round-trips a stub snapshot | Playwright: font renders (not fallback), switch locale, save, reload, load, assert state + `deviceId` stable |
 | **P1** | **Skirmish battle**: `ScenarioSanguo` = Cannae figures + `js/battle/command.js` (box-select, right-click move via flow field, control groups) + one formation. No campaign yet. | play a battle end-to-end with mouse; deterministic-seed replay test |
-| **P2** | Battle depth: formations, morale/fatigue/rout rewrite, general units + aura, one active ability, screenshake/hitstop | battle feels like command, not watching; morale curve probe |
+| **P2** | Battle depth: formations, morale/fatigue/rout rewrite, general units + aura, one active ability, screenshake/hitstop; **fixed sim-step + flow-field movement + render LOD** | battle feels like command, not watching; morale curve probe; **fps probe at `FIELD_CAP` 2000/side — hold ~60 fps or set the fallback cap** |
 | **P3** | **Campaign skeleton**: paper map, provinces, 3 factions, armies, march, turn phases, recruit/develop — battles still skirmish-only | play 10 turns, autosave each World phase, reload mid-campaign |
 | **P4** | **The handoff**: `BattleSetup`/`BattleResult`, campaign battles drop into P2 battle and feed losses/xp/injuries/territory back; `field.kind` = `open` first, then `town` (Outbreak buildings) + `fort` (Hold walls); auto-resolve model | win a province by playing the battle; skip one, compare outcomes; fight a `fort` breach |
 | **P5** | Generals as RPG: xp/level curve, skill unlocks, item modifiers, loyalty + defection, duels | a general levels from lvl 1→5 over a campaign; a duel kills one |
@@ -691,16 +712,21 @@ phase" discipline as `HOLD-DESIGN.md` §10.
 - **Q — Identity:** **Stage 1 anonymous local `deviceId`, no accounts.**
   Stage 2 adds a `ZS.Auth` seam + OAuth (PKCE) for cloud saves / multiplayer;
   `Store` interface unchanged; anon save migrates up on first sign-in. See §5.5.
+- **Q — Start date:** **194 CE** (Xingping 1) — post-Dong Zhuo, Cao Cao holding
+  Yan province, Liu Bei not yet a power, the warlord field still wide. Fixes
+  which generals/provinces/factions the almanac authors (P3, P7).
+- **Q — `FIELD_CAP`:** **2 000 per side** (≈ 4 000 figures), *provisional* on
+  P2 hitting frame rate with fixed-step + flow-field + render LOD; fallback
+  `≈ 800`. See the perf caveat in §4.1.
+- **Q — Campaign win condition:** **conquest only** for v1 — control every
+  province (or every enemy capital). Keep it pluggable: the turn resolver asks
+  a `winCheck(state)` predicate and the AI reads a `goal` object, so a turn
+  limit / score / historical objectives can be added later without touching
+  the loop.
 
 ### Still open
 
-1. **Start date** — 194 CE is only *leaning*. Pin it before the province /
-   faction / general almanac gets authored (P3, hard-needed by P7).
-2. **`FIELD_CAP` exact value** (~500/side) — a P2 perf-tuning number; validate
-   the total-figure budget against the engine's ~910-agent fit-view envelope,
-   accounting for `town`/`fort` fields having buildings on screen too.
-3. **Win condition(s)** for a campaign — conquest-only, or also a turn limit /
-   score / historical objectives. Needed by P7; affects AI goals in P6.
+*(none blocking — the next move is P0)*
 
 ---
 
