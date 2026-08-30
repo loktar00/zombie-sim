@@ -20,6 +20,7 @@
   const ZS = (window.ZS = window.ZS || {});
 
   const INK = "rgb(61,52,43)";
+  const INK_SOFT = "rgba(61,52,43,0.5)";
   const SHADOW = "rgba(40,35,25,0.14)";
 
   /* Unit types — silhouette is the read (§7.3). */
