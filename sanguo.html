@@ -95,6 +95,16 @@
   .facts dt{color:var(--ink-soft);}
   .facts dd{margin:0;}
 
+  /* Battle chrome: the canvas is the battle, this is the little that isn't */
+  .battlebar{
+    position:absolute;top:0;right:0;
+    display:none;gap:.4rem;align-items:center;
+    padding:.7rem 1rem;pointer-events:auto;
+  }
+  .battlebar.on{display:flex;}
+  .mbtn.small{font-size:.95rem;letter-spacing:.08em;padding:.25rem .6rem;border-bottom-width:1.2px;}
+  #ui.in-battle{align-items:stretch;}
+
   .toast{
     position:absolute;left:50%;bottom:6vh;transform:translateX(-50%) translateY(6px);
     background:var(--paper);border:1.2px solid var(--ink-faint);
@@ -128,6 +138,29 @@
      and a missing file here degrades to the system kai fallback chain -->
 <script src="js/fonts/subset-data.js"></script>
 <script src="js/fonts/font.js"></script>
+<!-- the shared engine core, untouched. ZS_MANUAL_BOOT keeps js/main.js from
+     starting a world at load: this page has a MENU before it has a battle, and
+     ZS.App decides when ZS.Engine.start() runs -->
+<script>var ZS_MANUAL_BOOT = true;</script>
+<script src="js/grid.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/world.js"></script>
+<script src="js/buildings.js"></script>
+<script src="js/tiles.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/stains.js"></script>
+<script src="js/agents.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/sound.js"></script>
+<!-- the battle layer -->
+<script src="js/figure/figure.js"></script>
+<script src="js/battle/flowfield.js"></script>
+<script src="js/battle/formation.js"></script>
+<script src="js/battle/command.js"></script>
+<script src="js/scenarios/sanguo.js"></script>
+<script src="js/main.js"></script>
 <!-- shell -->
 <script src="js/ui/menu.js"></script>
 <script src="js/app.js"></script>

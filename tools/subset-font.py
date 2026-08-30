@@ -29,6 +29,12 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# This script prints Han characters (the missing-glyph report). A Windows
+# console defaults to cp1252 and would raise UnicodeEncodeError mid-report.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # Every file that may contain player-visible text (§6.4 keeps it to these).
 TEXT_GLOBS = [
     "js/i18n/*.js",

@@ -272,16 +272,47 @@ A hybrid: a turn-based map-strategy RPG whose battles drop into the Cannae
 engine in real time. It is the only page with a shell (`ZS.App`: MENU →
 CAMPAIGN ↔ BATTLE → RESULT) and the only one that is bilingual.
 
-P0 is done — the page boots to a menu with no engine attached; `ZS.App` runs
-its own rAF loop until P1 wires the battle view. New top-level modules, all
-additive, none loaded by the other three pages: `js/store/*` (the `ZS.Store`
-persistence seam + Local/Memory/Remote backends), `js/auth/auth.js`
-(anonymous `deviceId`; an OAuth seam for later), `js/save/save-manager.js`
-(schema, `migrateUp` chain, capture/apply, shadow→main→bak durability),
-`js/i18n/*` (zh-tw default, en fallback), `js/fonts/*` (brush-kai subset
-loading), `js/text.js` (`ZS.boilText` — canvas type drawn per glyph on the
-boil), `js/app.js`, `js/ui/menu.js`. Verify with `node .verify/sanguo-p0.js`
-(45 assertions).
+P0 and P1 are done: the page boots to a menu, and **Skirmish** drops into a
+commandable real-time battle. New top-level modules, all additive, none loaded
+by the other three pages:
+
+- **shell** — `js/app.js` (`ZS.App`, the view state machine), `js/ui/menu.js`,
+  `js/text.js` (`ZS.boilText`, canvas type drawn per glyph on the boil)
+- **persistence** — `js/store/*` (the `ZS.Store` seam + Local/Memory/Remote),
+  `js/auth/auth.js` (anonymous `deviceId`, an OAuth seam for later),
+  `js/save/save-manager.js` (schema, `migrateUp` chain, capture/apply,
+  shadow→main→bak durability)
+- **localization** — `js/i18n/*` (zh-tw default, en fallback), `js/fonts/*`
+- **battle** — `js/scenarios/sanguo.js` (`ScenarioSanguo`), `js/figure/figure.js`
+  (the §7 stickman baseline every unit is drawn through),
+  `js/battle/flowfield.js` (Dijkstra group movement — no per-agent A* for a
+  block move), `js/battle/formation.js` (formations as data),
+  `js/battle/command.js` (selection, control groups, orders)
+
+Verify: `node .verify/sanguo-p0.js` (45), `node .verify/sanguo-p1.js` (51),
+and `node .verify/pages-regression.js` (23) — the last one exists to prove the
+core changes below did not disturb the original three pages.
+
+**Core changes this page needed.** All opt-in, all no-ops elsewhere:
+
+- `js/main.js` — the bootstrap is now `ZS.Engine.start(opts)` and auto-starts
+  unless a page sets `window.ZS_MANUAL_BOOT`. The handle carries `stop()`
+  (cancels the loop, removes every listener it added), `step(dt)` for headless
+  runs, `speed` (0 = paused, up to 4x) and `fixedStep`. 火柴三國 needs it
+  because its shell owns a MENU that exists before any battle, and rebuilds the
+  battle each time one is fought.
+- `js/draw.js` — the HUD face is `ZS.scenario.hudFont` when a pack sets one
+  (this page draws Chinese chrome and wants the kai stack), and there is a new
+  `scenario.drawWorld(c, t)` hook after `drawFX` that runs every frame whether
+  or not effects are pending.
+- `js/agents.js` — the exact-overlap separation nudge uses `ZS.hash` of the
+  pair's ids instead of `Math.random()`. Just as arbitrary, now reproducible;
+  it was the last thing keeping a fixed-seed battle from replaying identically.
+
+**The battle is deterministic** from `(seed, armies, order log)`. There is no
+bare `Math.random()` in the sim — the pack threads one seeded `ZS.rng32` — and
+it runs on a fixed 1/30 s step, which is also what makes the active pause and
+2x/4x free.
 
 The page ships a brush-kai face — **LXGW WenKai TC (霞鶩文楷), SIL OFL 1.1** —
 as a glyph subset cut to exactly the game's vocabulary (`fonts/`, licence and
@@ -292,9 +323,6 @@ opaque origin is refused and constraint 1 says the page must stay
 double-clickable. **Re-run `python tools/subset-font.py --check` after adding
 text to `js/i18n/*.js` or `js/campaign/data/*.js`** — new glyphs fall back
 silently otherwise.
-
-Nothing in `js/*.js` core changed for it. The only core change the design
-anticipates is an opt-in fixed sim-step flag in `main.js` at P2.
 
 ## Hold pack (`js/scenarios/hold.js`, design in `HOLD-DESIGN.md`)
 

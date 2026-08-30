@@ -6,7 +6,13 @@
   "use strict";
   const ZS = (window.ZS = window.ZS || {});
 
-  const HAND = '"Segoe Script","Bradley Hand","Comic Sans MS",cursive';
+  const HAND_DEFAULT = '"Segoe Script","Bradley Hand","Comic Sans MS",cursive';
+  /* A scenario may name its own HUD face — 火柴三國 draws Chinese chrome and
+     needs the brush-kai stack instead of a Latin script font. Unset (the other
+     three packs) keeps the original exactly. */
+  function hand() {
+    return (ZS.scenario && ZS.scenario.hudFont) || HAND_DEFAULT;
+  }
 
   /* ---------- world furniture ---------- */
 
@@ -253,7 +259,7 @@
       const age = a.sayMax - a.sayT;
       const sc = Math.min(1, age / 0.18); // pop in
       const al = Math.min(1, a.sayT / 0.4); // fade out
-      c.font = "11px " + HAND;
+      c.font = "11px " + hand();
       const w = c.measureText(a.say).width + 12,
         h = 16;
       const bx = a.x + ZS.jit(a.seed) * 0.8,
@@ -310,9 +316,9 @@
       c.translate(20, 24);
       c.rotate(-0.015);
       c.fillStyle = "rgba(46,44,40,0.85)";
-      c.font = "italic " + fs + "px " + HAND;
+      c.font = "italic " + fs + "px " + hand();
       c.fillText(hud.title, 0, 0);
-      c.font = "italic " + fs * 0.85 + "px " + HAND;
+      c.font = "italic " + fs * 0.85 + "px " + hand();
       c.fillStyle = "rgba(60,58,50,0.8)";
       c.fillText(hud.stats, 0, fs * 1.35);
       // the scenario's own mini legend (its glyphs, its labels)
@@ -324,7 +330,7 @@
     c.save();
     c.translate(20, vh - 18);
     c.fillStyle = "rgba(60,58,50,0.55)";
-    c.font = "italic 12px " + HAND;
+    c.font = "italic 12px " + hand();
     let hint = hud.hint;
     if (ZS.debug && ZS.debug.cam && ZS.debug.cam.auto)
       hint += "  ·  auto-camera — drag to take control";
@@ -344,10 +350,10 @@
         c.textAlign = "center";
         c.fillStyle = "rgba(90,40,30,0.85)";
         c.font =
-          "italic " + Math.max(18, Math.min(34, vw / 18) * (ov.big ? 1.7 : 1)) + "px " + HAND;
+          "italic " + Math.max(18, Math.min(34, vw / 18) * (ov.big ? 1.7 : 1)) + "px " + hand();
         c.fillText(ov.main, 0, 0);
         if (ov.sub) {
-          c.font = "italic 14px " + HAND;
+          c.font = "italic 14px " + hand();
           c.fillText(ov.sub, 0, 28);
         }
         c.restore();
@@ -392,9 +398,9 @@
     // the tally
     c.textAlign = "center";
     c.fillStyle = card.lost ? "rgba(140,50,30,0.95)" : "rgba(70,58,40,0.95)";
-    c.font = "italic " + fs * 1.5 + "px " + HAND;
+    c.font = "italic " + fs * 1.5 + "px " + hand();
     c.fillText(card.title, 0, y + fs * 1.7);
-    c.font = "italic " + fs + "px " + HAND;
+    c.font = "italic " + fs + "px " + hand();
     c.fillStyle = "rgba(60,52,40,0.85)";
     let ly = y + fs * 3.4;
     for (const line of card.lines) {
@@ -407,7 +413,7 @@
       "rgba(60,52,40," +
       (0.45 + 0.25 * Math.sin((performance.now() / 1000) * 2.4)).toFixed(2) +
       ")";
-    c.font = "italic " + fs * 0.85 + "px " + HAND;
+    c.font = "italic " + fs * 0.85 + "px " + hand();
     c.fillText("click to continue", 0, y + h - fs * 0.9);
     c.restore();
   }
@@ -455,6 +461,9 @@
 
     // transient effects (tracers, poofs, blood) — the scenario renders its own records
     if (ZS.fx.length) ZS.scenario.drawFX(c, ZS.fx);
+    // a last world-space pass that runs even with no effects pending: the
+    // 火柴三國 command layer draws selection rings and order markers here
+    if (ZS.scenario.drawWorld) ZS.scenario.drawWorld(c, t);
 
     // voices float above the crowd
     drawBubbles(c, sim.agents, vis);

@@ -245,7 +245,10 @@
           sy = a.y - b.y;
         let sd2 = sx * sx + sy * sy;
         if (sd2 < 0.0001) {
-          const an = Math.random() * 6.283; // exact overlap: nudge at random
+          // exact overlap: nudge in an arbitrary but *reproducible* direction.
+          // (Math.random() here was the last thing keeping a fixed-seed battle
+          // from replaying identically; the pair's ids are just as arbitrary.)
+          const an = ZS.hash(a.id * 7.31 + b.id * 13.17) * 6.283;
           sx = Math.cos(an);
           sy = Math.sin(an);
           sd2 = 1;

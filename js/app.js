@@ -154,8 +154,13 @@
       }
       this.state = state;
       this.view = next;
+      /* A view may own the frame loop itself — the battle hands it to
+         js/main.js, which is the engine's. Two loops are never live at once
+         (SANGUO-DESIGN.md §2: the other view is fully torn down). */
+      if (next.ownsLoop) this.stop();
       if (next.resize) next.resize(this.W, this.H);
       if (next.enter) next.enter(payload);
+      if (!next.ownsLoop) this.start();
       if (ZS.UI) ZS.UI.onState(state);
       return true;
     },
@@ -170,7 +175,8 @@
       this.cv.height = Math.max(1, this.H * this.DPR);
       this.cv.style.width = this.W + "px";
       this.cv.style.height = this.H + "px";
-      this.paper = buildPaper(this.W, this.H);
+      // the backdrop is the menu's; a loop-owning view draws its own world
+      if (!(this.view && this.view.ownsLoop)) this.paper = buildPaper(this.W, this.H);
       if (this.view && this.view.resize) this.view.resize(this.W, this.H);
     },
 
@@ -331,6 +337,47 @@
   }
 
   App.registerView(STATE.MENU, MenuView);
+
+  /* ---- the BATTLE view ------------------------------------------------ */
+
+  /* Owns the frame loop: js/main.js builds the world, wires input and runs the
+     engine, and hands back a handle. Leaving the battle stops it and removes
+     every listener, so nothing sims behind the menu.
+
+     `fixedStep` is what makes the fight reproducible (§8): the sim advances in
+     whole 1/30 s ticks off an accumulator rather than on the frame delta, so
+     the same seed and the same order log produce the same battle — and
+     pause / 2x / 4x are just a multiplier on what the accumulator is fed. */
+  const BattleView = {
+    ownsLoop: true,
+    engine: null,
+    scen: null,
+
+    enter(payload) {
+      const setup =
+        (payload && payload.setup) ||
+        ZS.ScenarioSanguo.defaultSetup((Math.random() * 0x7fffffff) | 0);
+      this.scen = new ZS.ScenarioSanguo(setup);
+      this.engine = ZS.Engine.start({
+        scenario: this.scen,
+        seed: setup.seed,
+        fixedStep: 1 / 30,
+      });
+      App.battle = { engine: this.engine, scen: this.scen, setup };
+      return this.engine;
+    },
+
+    exit() {
+      if (ZS.Command) ZS.Command.detach();
+      if (this.engine) this.engine.stop();
+      if (ZS.fx) ZS.fx.length = 0;
+      this.engine = null;
+      this.scen = null;
+      App.battle = null;
+    },
+  };
+
+  App.registerView(STATE.BATTLE, BattleView);
 
   ZS.App = App;
   ZS.INK = INK;

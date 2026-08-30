@@ -58,6 +58,9 @@
       this.panels.about = this._about();
       for (const k in this.panels) this.root.appendChild(this.panels[k]);
 
+      this.battleBar = this._battleBar();
+      this.root.appendChild(this.battleBar);
+
       this.toast = el("div", { id: "toast", class: "toast" });
       this.root.appendChild(this.toast);
 
@@ -74,8 +77,42 @@
       return this;
     },
 
-    onState() {
-      /* P0 has one state; later phases hide the menu here. */
+    /* The menu belongs to MENU; a loop-owning view gets the canvas to itself
+       and only its own chrome. */
+    onState(state) {
+      const inBattle = state === "battle";
+      this.root.classList.toggle("in-battle", inBattle);
+      this.battleBar.classList.toggle("on", inBattle);
+      for (const k in this.panels) {
+        if (inBattle) this.panels[k].classList.remove("on");
+      }
+      if (!inBattle) this.show("main");
+      if (inBattle) this._tickBar();
+    },
+
+    _battleBar() {
+      const speed = el("button", { id: "btn-speed", class: "chip" });
+      speed.addEventListener("click", () => {
+        const e = ZS.engine;
+        if (!e) return;
+        e.speed = e.speed === 0 ? 1 : e.speed >= 4 ? 0 : e.speed * 2;
+        this._tickBar();
+      });
+      this.speedBtn = speed;
+      const quit = btn("btn-quit-battle", "battle.quit", () => ZS.App.go("menu"), "small");
+      const bar = el("div", { class: "battlebar", id: "battle-bar" }, [speed, quit]);
+      return bar;
+    },
+
+    /* The bar reads the engine rather than tracking it, so a keyboard speed
+       change (space / , / .) shows up here too. */
+    _tickBar() {
+      if (!this.battleBar.classList.contains("on")) return;
+      const e = ZS.engine;
+      const sp = e ? e.speed : 1;
+      this.speedBtn.textContent =
+        sp === 0 ? ZS.i18n.t("battle.paused") : ZS.i18n.t("battle.speed", { n: sp });
+      requestAnimationFrame(() => this._tickBar());
     },
 
     show(name) {
@@ -97,13 +134,14 @@
 
     _main() {
       const soon = () => this.say(ZS.i18n.t("common.soon"));
+      const skirmish = () => ZS.App.go("battle");
       const cont = btn("btn-continue", "menu.continue", () => this.continueGame(), "primary");
       cont.hidden = true;
       this.btnContinue = cont;
       return el("div", { class: "panel main on", "data-panel": "main" }, [
         cont,
         btn("btn-campaign", "menu.campaign", soon),
-        btn("btn-skirmish", "menu.skirmish", soon),
+        btn("btn-skirmish", "menu.skirmish", skirmish),
         btn("btn-load", "menu.load", () => this.show("load")),
         btn("btn-settings", "menu.settings", () => this.show("settings")),
         btn("btn-about", "menu.about", () => this.show("about")),
