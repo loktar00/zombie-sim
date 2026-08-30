@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Sanguo",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "file": "${workspaceFolder}/sanguo.html",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
+}
