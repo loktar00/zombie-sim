@@ -17,25 +17,18 @@ re-deriving anything.
 |---|---|
 | **Phase** | **P2 — battle depth** |
 | **Status** | 🚧 **in progress** (P0–P1 ✅) |
-| **Verify** | P2 local browser probe: **6/6 seeds resolve in 80–151 s**, fixed-seed replay is identical, morale/rally/ability checks pass, original three pages boot clean<br>P1 baseline (machine-local suites): 62 / 45 / 23 assertions; 16-seed sweep green before P2 |
+| **Verify** | P2 local browser probe: **6/6 seeds resolve in 62–119 s**, fixed-seed replay is identical, every commander branch and the feedback clock pass; headed Chrome holds **60.0 fps at 2,000/side**; original three pages boot clean<br>P1 baseline (machine-local suites): 62 / 45 / 23 assertions; 16-seed sweep green before P2 |
 | **Updated** | 2026-08-30 |
 
 ### Next action
 
-**Continue P2 — battle depth.** Morale, general units and the first active
-ability are complete. The remaining pieces, roughly in order:
+**Continue P2 — formation tuning.** Morale, generals, the first active ability,
+combat feedback, the enemy commander and render LOD are complete. One P2 item
+remains:
 
-1. **Game feel** — screenshake on charges, hitstop on a general kill, `ZS.fx`
-   bursts along the hit vector.
-2. **Enemy commander AI** — move the placeholder planner into
-   `js/battle/commander-ai.js`; add the influence map and morale-aware behaviour
-   tree from §4.4.
-3. **Render LOD + the `FIELD_CAP` fps probe.** `ZS.figure.drawFoot` is the
-   near-detail case; add mid (head/torso/weapon) and far (`wpoly` mass shapes)
-   buckets keyed on camera distance, then probe 2000/side and either confirm
-   the cap or set the fallback of about 800 (the perf caveat in §4.1).
-4. **Formation tuning** — P1 wires all five generators and really only tunes
-   `line` and `wedge`.
+1. **Formation tuning** — P1 wires all five generators and really only tunes
+   `line` and `wedge`; tune column / square / skirmish and visually verify every
+   transition under movement and casualties.
 
 The fixed sim step P2 also lists is **already done** — P1's determinism test
 needed it. See decision 12 below.
@@ -153,9 +146,9 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 | 2.3 | General figures from `BattleSetup.generals`: tier 將, name banner, derived aura/cohesion, command-loss shock | ✅ | `js/scenarios/sanguo.js`, `js/figure/figure.js` |
 | 2.4 | First active ability: deterministic, cooldown-gated inspire / 將令 morale heal | ✅ | `js/battle/ability.js`, `js/battle/command.js` |
 | 2.5 | Morale bar + inspire ring/tick feedback | ✅ | `js/battle/command.js`, `js/scenarios/sanguo.js` |
-| 2.6 | Charge shake, general-kill hitstop and hit-vector bursts | ☐ | — |
-| 2.7 | Influence-map enemy commander | ☐ | `js/battle/commander-ai.js` |
-| 2.8 | Render LOD + headed `FIELD_CAP` fps probe | ☐ | `js/figure/figure.js` |
+| 2.6 | Charge shake, general-kill hitstop and hit-vector bursts | ✅ | `js/battle/feel.js`, `js/camera.js`, `js/main.js`, `js/scenarios/sanguo.js` |
+| 2.7 | Influence-map enemy commander | ✅ | `js/battle/commander-ai.js` |
+| 2.8 | Render LOD + headed `FIELD_CAP` fps probe | ✅ | `js/figure/figure.js`, `js/scenarios/sanguo.js` |
 | 2.9 | Tune column / square / skirmish formations | ☐ | `js/battle/formation.js` |
 
 ### What the P2 slice proves so far
@@ -173,11 +166,25 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 - `G` invokes inspire through `js/battle/ability.js`; it scales from `zhi`,
   respects a 24 s cooldown, writes to the deterministic order log, and gives a
   short sketch-ring/tick response that returns to rest
-- a six-seed passive-player probe resolves every battle in 80–151 s; seed 47
-  replayed with the same duration, winner, side ledger and agent-position
-  digest; wavering and rally both occurred in every sampled battle
+- charge contact emits one directional sketch burst per order and adds
+  render-only camera trauma; a general kill adds a stronger burst and a 90 ms
+  real-time hitstop without advancing simulation time or consuming the battle
+  PRNG. Pointer-to-world mapping remains exact while the camera is displaced
+- the enemy commander's best `zhi` sets its decision cadence; three reused
+  18×14 typed influence maps feed a shallow probe / hold / press / reserve /
+  retreat tree, while all movement still goes through the existing flow field
+- a six-seed passive-player probe resolves every battle in 62–119 s; seed 47
+  replayed with the same duration, winner and agent-position digest. Forced
+  branch probes cover hold, reserve commitment and retreat
+- close zoom still uses the exact full stickman; mid zoom keeps
+  head/torso/weapon silhouettes, and only large fit-view fields collapse formed
+  ranks into reused `wpoly` washes. Routed troops stay as sparse individuals
+- at 4,000 figures in headed Chrome, fit-view render submission fell from
+  **12.4 ms to 0.8 ms** while close zoom stayed effectively flat
+  (**7.2 → 7.0 ms**). The real rAF probe held **60.0 fps**, p95 16.8 ms and max
+  17.7 ms, so `FIELD_CAP = 2000` per side is confirmed
 - `zombiesim.html`, `battle.html` and `hold.html` still boot their own scenario
-  with 509 / 781 / 0 initial agents and no page errors
+  with their expected populations, zero shake offsets and no page errors
 
 ---
 
@@ -192,6 +199,14 @@ all are opt-in and no-ops for `zombiesim.html` / `battle.html` / `hold.html`, an
 | `js/main.js` | body wrapped in `ZS.Engine.start(opts)`, auto-starting unless the page sets `ZS_MANUAL_BOOT`. Adds `stop()`, `step(dt)`, `speed`, `fixedStep`. | The shell has a MENU before it has a battle, and rebuilds the battle every time one is fought. |
 | `js/draw.js` | `hand()` returns `ZS.scenario.hudFont` when a pack sets one; new `scenario.drawWorld(c, t)` hook after `drawFX`. | The HUD is Chinese and needs the kai stack; the command overlay has to draw even on a frame with no effects pending. |
 | `js/agents.js` | the exact-overlap separation nudge is `ZS.hash(a.id, b.id)` instead of `Math.random()`. | It was the last thing keeping a fixed-seed battle from replaying identically. Just as arbitrary, now reproducible. |
+
+P2 adds two more opt-in core hooks. `Camera` carries render offsets and removes
+them again in `toWorld()`, so feedback never changes simulation coordinates or
+pointer accuracy. The fixed-step rAF loop asks an optional
+`scenario.frameFeedback(dt, t)` for those offsets and a real-time hold; packs
+without the hook keep `[0, 0]` and run exactly as before. Headless
+`engine.step(dt)` deliberately ignores feedback time, preserving fast,
+deterministic probes.
 
 ---
 
@@ -263,6 +278,21 @@ live in `SANGUO-DESIGN.md` §11.)
    is also unreliable while the CSS `@font-face` sits unloaded beside the
    JS-added face. `ZS.Fonts.check()` rasterizes 火柴三國 twice and diffs the
    alpha channel instead.
+14. **Battle feedback owns a separate deterministic sequence.** Charge and
+    general-kill bursts derive their seeds from event geometry plus a local
+    counter; they never call the scenario RNG. Turning a particle on or off
+    therefore cannot change the next combat roll.
+15. **The commander opens with two short probes before committing.** A fully
+    coordinated six-block advance made contact too efficiently and collapsed
+    sampled battles in 32–40 s. The staged probe remains active on screen,
+    gives the player a first-command beat, and keeps passive-player battles in
+    the designed 60–180 s window. A crisis can still promote a reserve before
+    the opening completes.
+16. **Far mass LOD is population-aware.** At the normal 640-man skirmish, fit
+    view keeps individual mid-detail silhouettes; rank masses activate at fit
+    zoom only on fields above 1,200 figures. Close zoom always uses the frozen
+    full figure. This preserves the product look where the renderer has budget
+    and spends the abstraction only where the 4,000-figure cap needs it.
 
 ---
 
@@ -430,3 +460,18 @@ Every one of these also presented as "the battle stalls":
   `js/battle/ability.js` (`G`: inspire / 將令), its deterministic order-log
   entry, morale bar and sketch-ring feedback. Six fixed seeds resolve in
   80–151 s; seed 47 replays identically; the three earlier pages boot clean.
+- **2026-08-30 (cont.)** — continued P2. Added proportional charge/general-kill
+  feedback (`js/battle/feel.js`), render-only camera trauma, and a 90 ms
+  real-time hitstop that leaves fixed simulation time and replay RNG alone.
+  Replaced the nearest-target placeholder with `js/battle/commander-ai.js`:
+  reused influence-map buffers, `zhi`-scaled planning, staged probes and a
+  shallow morale-aware priority tree. Six seeds now resolve in 62–119 s; seed
+  47 repeats exactly; forced hold/commit/retreat checks and all three legacy
+  page boots pass.
+- **2026-08-30 (cont.)** — completed P2 render LOD. Kept the close figure
+  unchanged, added the specified mid silhouette and far rank-mass paths with
+  reused geometry, and retained sparse individual fugitives for routed blocks.
+  On headed Chrome at 2,000/side, fit render cost dropped 12.4 → 0.8 ms and an
+  actual 180-frame rAF sample held 60.0 fps (p95 16.8 ms, max 17.7 ms), so the
+  provisional `FIELD_CAP = 2000` is accepted. Normal 640-man fit view remains
+  individual, not massed.

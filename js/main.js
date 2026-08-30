@@ -278,15 +278,23 @@
       last = now;
       ZS.setBoil(t);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      const feedback =
+        typeof scenario.frameFeedback === "function" ? scenario.frameFeedback(dt, t) : null;
+      cam.shakeX = feedback ? feedback.x || 0 : 0;
+      cam.shakeY = feedback ? feedback.y || 0 : 0;
       if (engine.fixedStep > 0) {
         const fs = engine.fixedStep;
-        engine.acc += dt * engine.speed;
+        if (!(feedback && feedback.hold)) engine.acc += dt * engine.speed;
         // a hard cap so a stalled tab does not try to catch up forever
         if (engine.acc > fs * 12) engine.acc = fs * 12;
-        while (engine.acc >= fs) {
+        while (engine.acc >= fs && !(feedback && feedback.hold)) {
           engine.acc -= fs;
           engine.simT += fs;
           ZS.Sim.update(fs, engine.simT, world, W, H);
+          // A scenario may request a real-time impact hold during this tick.
+          // Stop before consuming another fixed step; frameFeedback releases
+          // it from wall time, so a zero simulation scale cannot deadlock it.
+          if (scenario.simHold) break;
         }
       } else {
         engine.simT += dt;

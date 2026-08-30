@@ -21,9 +21,7 @@ someone could reasonably trip over.
 | [2](#2) | OPEN | tooling | The font subset can silently fall out of date |
 | [3](#3) | OPEN | battle | Battle pacing constants are untuned guesses |
 | [4](#4) | DEFERRED | battle | `open` battlefields are a bare plain — no river, hills or forest |
-| [5](#5) | DEFERRED | battle | `FIELD_CAP = 2000` is unvalidated; P1 fields 320/side |
-| [6](#6) | DEFERRED | battle | Enemy commander AI is a placeholder |
-| [7](#7) | DEFERRED | structure | Commander AI and future duels still need their §9 files |
+| [7](#7) | DEFERRED | structure | Duels still need their §9 file |
 | [8](#8) | NIT | tooling | `oxfmt js/` rewrites line endings across every core file |
 | [9](#9) | NIT | render | `scenario.hud()` allocates per frame |
 
@@ -113,17 +111,18 @@ right:
 | `STALL_GIVEUP` | `js/scenarios/sanguo.js` | 12 s | how long a unit may make no progress before its order is dropped |
 | `HP` | `js/scenarios/sanguo.js` | `[5,6,3,5,7,4]` | the main pacing lever |
 
-The old P1 16-seed sweep resolved in **30–186 s**. After the P2 morale rewrite,
-a six-seed sample resolves in **80–151 s**, inside the design's 60–180 s target.
-That is encouraging but not a retune: the full sweep still needs to run after
-the commander AI and formation work stop moving the pressure curve.
+The old P1 16-seed sweep resolved in **30–186 s**. With P2 morale and the new
+commander active, a six-seed passive-player sample resolves in **62–119 s**,
+inside the design's 60–180 s target. That is encouraging but not a retune: the
+full sweep still needs to run after formation work stops moving the pressure
+curve.
 
 `STALL_GIVEUP` in particular is a backstop, not a mechanism: if it is firing
 often in normal play, something else is wrong and it is hiding it. Worth
 instrumenting how often it triggers before trusting it.
 
 **Next step:** instrument how often `STALL_GIVEUP` fires, then run the full seed
-sweep and retune after the rest of P2 (commander AI and formations).
+sweep and retune after the remaining P2 formation work.
 
 ---
 
@@ -151,54 +150,18 @@ Recorded as decision 9 in `PROGRESS.md`.
 
 ---
 
-## 5
-
-**DEFERRED · battle · `FIELD_CAP = 2000` is unvalidated**
-
-§4.1 sets the on-field cap at 2000 per side (~4000 figures) and flags it as
-provisional on P2 hitting frame rate, with a fallback of ~800. P1 fields
-**320 per side / 640 total** and has never been near the cap.
-
-The pieces the cap depends on: the fixed sim step (done, P1), flow-field group
-movement (done, P1), and render LOD (**not started** — `ZS.figure.drawFoot` is
-the only detail level there is).
-
-**Next step:** P2's fps probe at 2000/side on real hardware, headed Chrome with
-GPU per `AGENTS.md`. Confirm the cap or set the fallback.
-
----
-
-## 6
-
-**DEFERRED · battle · the enemy commander is a placeholder**
-
-`ScenarioSanguo._commanderAI` marches at the nearest enemy block, charges
-inside 190 px, and sends mounted units around a flank beyond 260 px. It
-re-plans only when a unit is idle, on a 1.1 s tick.
-
-§4.4 wants an influence map (threat / friendly strength / objective value)
-driving a small behaviour tree — hold, press the weak flank, commit the
-reserve, retreat when army morale collapses — scaled by the enemy's best
-general's `zhi`. Scheduled for **P2**.
-
-It is good enough that player orders matter, and it does not cheat. It also
-does not coordinate: two blocks will happily pick the same target.
-
----
-
 ## 7
 
-**DEFERRED · structure · commander AI and future duels still need their §9 files**
+**DEFERRED · structure · duels still need their §9 file**
 
 The file plan lists `js/battle/morale.js`, `js/battle/duel.js`,
-`js/battle/commander-ai.js` and `js/battle/ability.js`. P2 has now split morale
-and the first active ability into their intended files. The commander AI is
-still a method on `ScenarioSanguo`, and duels do not exist yet.
+`js/battle/commander-ai.js` and `js/battle/ability.js`. P2 has now split morale,
+the first active ability and the influence-map commander into those intended
+files. Duels do not exist yet.
 
-The remaining structural work follows the feature phases: the influence-map
-planner moves to `commander-ai.js` in P2; duels arrive with general RPG depth
-in P5. `js/battle/flowfield.js`, `formation.js`, `command.js`, `morale.js` and
-`ability.js` are already self-contained.
+The remaining structural work follows its feature phase: duels arrive with
+general RPG depth in P5. `js/battle/flowfield.js`, `formation.js`, `command.js`,
+`morale.js`, `ability.js` and `commander-ai.js` are already self-contained.
 
 ---
 

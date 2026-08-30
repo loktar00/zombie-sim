@@ -73,6 +73,7 @@
   const STALL_GIVEUP = 12; // seconds of no progress before an order is dropped
   const STALEMATE = 45; // seconds without a casualty before the field is called
   const STALEMATE_EDGE = 0.1; // strength gap below which a called field is a draw
+  const FIELD_CAP = 2000; // provisional cap, validated by the P2 LOD probe
 
   const TG = { x: 0, y: 0 }; // scratch: no per-frame allocation
   const FLOW = { x: 0, y: 0 };
@@ -145,6 +146,9 @@
       this.orderLog = []; // (t, unit, order) — the replay record (§3.6)
       this.morale = null;
       this.abilities = null;
+      this.feel = null;
+      this.commander = null;
+      this.simHold = false;
     }
 
     /* ---------- deterministic randomness (§3.6) ---------- */
@@ -405,6 +409,10 @@
       return this.abilities ? this.abilities.use(id, general) : false;
     }
 
+    frameFeedback(dt, t) {
+      return this.feel ? this.feel.frame(dt, t) : null;
+    }
+
     _beginOrder(u, o) {
       u.tx = o.x;
       u.ty = o.y;
@@ -427,6 +435,7 @@
         u.ty = u.cy;
         u.reach = true;
       } else {
+        if (u.st === CHARGE) u.chargeHit = false;
         this._setGoal(u, o.x, o.y);
       }
     }
@@ -555,7 +564,7 @@
         if (u.st !== ROUT && u.alive === 0) u.st = ROUT;
       }
 
-      if (!this.over) this._commanderAI(dt, grid);
+      if (!this.over && this.commander) this.commander.update(dt);
       this._checkEnd();
     }
 
@@ -762,52 +771,6 @@
         u.tx = u.cx;
         u.ty = u.cy;
         u.turn = null;
-      }
-    }
-
-    /* ---------- the enemy commander (P1: deliberately simple) ---------- */
-
-    /* P2 replaces this with an influence map feeding a behaviour tree (§4.4).
-       For now: march at the nearest enemy unit, charge when close, and let the
-       cavalry go around. It is enough to make the player's orders matter. */
-    _commanderAI(dt, _grid) {
-      this.aiT -= dt;
-      if (this.aiT > 0) return;
-      this.aiT = 1.1;
-      for (const u of this.units) {
-        if (u.side !== 1 || u.st === ROUT || !u.alive) continue;
-        if (u.orders.length && u.st !== HOLD) continue;
-        /* Nearest enemy block first, but fall through to the next one when
-           the field says it cannot be reached — otherwise a unit stranded
-           across the water re-issues the same impossible order forever. */
-        const foes = [];
-        for (const e of this.units) {
-          if (e.side === u.side || e.st === ROUT || !e.alive) continue;
-          foes.push(e);
-        }
-        if (!foes.length) continue;
-        foes.sort(
-          (a, b) => Math.hypot(a.cx - u.cx, a.cy - u.cy) - Math.hypot(b.cx - u.cx, b.cy - u.cy),
-        );
-        const mounted = u.type === F().CAV || u.type === F().HBOW;
-        for (let k = 0; k < Math.min(3, foes.length); k++) {
-          const best = foes[k];
-          const bd = Math.hypot(best.cx - u.cx, best.cy - u.cy);
-          if (mounted && bd > 260) {
-            // ride around the flank rather than into the spears
-            const flank = u.cy < best.cy ? -1 : 1;
-            this.order(u, "attack", best.cx + (best.cx - u.cx) * 0.15, best.cy + flank * 230);
-          } else if (bd < 190 && CHARGE_SPD[u.type] > 0) {
-            this.order(u, "charge", best.cx, best.cy);
-          } else {
-            this.order(u, "attack", best.cx, best.cy);
-          }
-          if (u.reach) break;
-        }
-        /* Every candidate refused: rather than stand in whatever corner it
-           chased its last target into, fall back to the middle of the field
-           where the enemy actually is. */
-        if (!u.reach && this.field) this.order(u, "attack", this.field.x, this.field.y);
       }
     }
 
@@ -1084,6 +1047,16 @@
     /* ---------- combat ---------- */
 
     _hit(a, be, dmg) {
+      const unit = this.units[a.un];
+      if (unit && unit.st === CHARGE && !unit.chargeHit && this.feel) {
+        unit.chargeHit = true;
+        this.feel.charge(
+          (a.x + be.x) * 0.5,
+          (a.y + be.y) * 0.5,
+          Math.cos(unit.head),
+          Math.sin(unit.head),
+        );
+      }
       let d = dmg;
       if (be.fleeing) d += 1; // a spear in the back of a running man
       // a braced spear wall against a horse
@@ -1114,6 +1087,17 @@
       if (a.dead) return; // two men can land the killing blow in one frame
       a.dead = true;
       a.hp = 0;
+      const unit = this.units[a.un];
+      if (unit && unit.lodRep === a) {
+        unit.lodRep = null;
+        for (let i = 0; i < unit.mem.length; i++) {
+          const candidate = unit.mem[i];
+          if (!candidate.dead && !candidate.gone) {
+            unit.lodRep = candidate;
+            break;
+          }
+        }
+      }
       this.lastBloodT = this.bt;
       const s = this.sides[a.side];
       s.dead++;
@@ -1121,6 +1105,7 @@
       if (a.routFlag) s.routed--;
       else s.alive--;
       if (this.morale) this.morale.casualty(a);
+      if (a.general && this.feel) this.feel.generalKill(a, killer);
       if (this.stains) this.stains.corpse(a);
       this.fx.push({ x: a.x, y: a.y, t: 0.3, poof: true, seed: a.seed });
       this.fx.push({ x: a.x, y: a.y - 4, t: 0.45, blood: 2, seed: a.seed + 11 });
@@ -1177,6 +1162,7 @@
         nearGeneral: null,
         cohesion: 0.72,
         general: null,
+        chargeHit: false,
         contact: 0,
         hunting: false,
         huntT: 0,
@@ -1224,6 +1210,7 @@
         u.mem.push(a);
         this.sides[opt.side].alive++;
       }
+      u.lodRep = u.mem[0] || null;
       return u;
     }
 
@@ -1469,7 +1456,6 @@
       this.stalemate = false;
       this.overT = 0;
       this.lastBloodT = 0;
-      this.aiT = 1.5;
       this.units = [];
       this.generals = [];
       this.nextUid = 1;
@@ -1495,6 +1481,10 @@
       this.morale.init();
       this.abilities = new ZS.BattleAbilities(this);
       this.abilities.init();
+      this.feel = new ZS.BattleFeel(this);
+      this.commander = new ZS.SanguoCommanderAI(this);
+      this.commander.init();
+      this.simHold = false;
       if (ZS.Command) ZS.Command.attach(this);
     }
 
@@ -1593,6 +1583,28 @@
 
     draw(c, a, t) {
       const moving = Math.hypot(a.vx, a.vy);
+      const cam = ZS.debug && ZS.debug.cam;
+      const zoom = cam ? cam.zoom : 1;
+      const unit = this.units[a.un];
+      const largeField = this.sides[0].total0 + this.sides[1].total0 > 1200;
+      if ((zoom < 0.28 || (largeField && zoom < 0.43)) && unit) {
+        if (unit.st === ROUT) {
+          // A routed block is no longer a rank-shaped mass. Keep a sparse
+          // stream of recognizable fugitives instead of lying about its form.
+          if (((a.id || a.seed) + unit.uid) % 5 === 0) {
+            F().drawMid(c, a);
+            F().drawMarks(c, a, t, moving);
+          }
+        } else if (unit.lodRep === a) {
+          F().drawFarUnit(c, unit);
+        }
+        return;
+      }
+      if (zoom < 0.78) {
+        F().drawMid(c, a);
+        F().drawMarks(c, a, t, moving);
+        return;
+      }
       if (a.type === F().CAV || a.type === F().HBOW) F().drawRider(c, a, moving);
       else F().drawFoot(c, a, moving);
       F().drawMarks(c, a, t, moving);
@@ -1600,7 +1612,33 @@
 
     drawFX(c, fx) {
       for (const sh of fx) {
-        if (sh.inspire) {
+        if (sh.impact) {
+          const life = sh.impact === 2 ? 0.52 : 0.34;
+          const k = sh.t / life;
+          const px = -sh.dy;
+          const py = sh.dx;
+          const count = sh.impact === 2 ? 11 : 6;
+          c.strokeStyle =
+            sh.impact === 2
+              ? "rgba(150,54,44," + (0.82 * k).toFixed(2) + ")"
+              : "rgba(92,72,50," + (0.68 * k).toFixed(2) + ")";
+          c.lineWidth = sh.impact === 2 ? 1.7 : 1.25;
+          for (let i = 0; i < count; i++) {
+            const spread = (ZS.hash(sh.seed + i * 3) * 2 - 1) * (sh.impact === 2 ? 16 : 10);
+            const reach = (1 - k) * (sh.impact === 2 ? 46 : 28) * (0.6 + ZS.hash(sh.seed + i));
+            const bx = sh.x + px * spread;
+            const by = sh.y + py * spread;
+            ZS.wline(
+              c,
+              bx + sh.dx * reach * 0.35,
+              by + sh.dy * reach * 0.35,
+              bx + sh.dx * reach,
+              by + sh.dy * reach,
+              sh.seed + i * 7,
+              0.8,
+            );
+          }
+        } else if (sh.inspire) {
           const k = sh.t / 0.85;
           const eased = 1 - k * k;
           c.strokeStyle = F().wash(0, 0.2 + k * 0.45);
@@ -1672,6 +1710,7 @@
   }
 
   ScenarioSanguo.defaultSetup = defaultSetup;
+  ScenarioSanguo.FIELD_CAP = FIELD_CAP;
   ScenarioSanguo.STATES = { HOLD, MOVE, ATTACK, CHARGE, ROUT };
   ZS.ScenarioSanguo = ScenarioSanguo;
 })();
