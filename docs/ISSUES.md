@@ -118,11 +118,20 @@ full sweep still needs to run after formation work stops moving the pressure
 curve.
 
 `STALL_GIVEUP` in particular is a backstop, not a mechanism: if it is firing
-often in normal play, something else is wrong and it is hiding it. Worth
-instrumenting how often it triggers before trusting it.
+often in normal play, something else is wrong and it is hiding it.
 
-**Next step:** instrument how often `STALL_GIVEUP` fires, then run the full seed
-sweep and retune after the remaining P2 formation work.
+The formation pass added a per-battle `scenario.stallGiveups` counter. A
+16-seed deliberately aggressive opening (every player block attack-moves at its
+nearest enemy, then receives no more orders) resolved all battles in
+**40.8–129.6 s** with no stalemates, but recorded **20 watchdog drops across 15
+battles**. That order pattern intentionally creates congestion, so it proves the
+backstop is active but does not yet prove ordinary play is broken. The exact
+documented passive-player suite is absent from this checkout because of issue
+1, so its earlier 62–119 s sample could not be rerun with the new counter.
+
+**Next step:** recover or commit the canonical seed probe, record which units
+and order modes trigger each drop, then fix the movement/congestion cause before
+retuning `STALL_GIVEUP` or `HP`.
 
 ---
 

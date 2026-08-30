@@ -153,6 +153,7 @@
       this.result = -1;
       this.stalemate = false;
       this.lastBloodT = 0;
+      this.stallGiveups = 0; // diagnostic: normal battles should rarely need the watchdog
       this.w = 0;
       this.h = 0;
       this.paused = false;
@@ -349,6 +350,7 @@
         un: extra.un,
         sx: extra.sx,
         sy: extra.sy, // slot offsets, unit-local (+x right, +y forward)
+        sf: extra.sf || 0, // facing offset; square ranks watch all four sides
         sx2: 0,
         sy2: 0, // slot world position (scratch)
         hp: extra.hp,
@@ -421,8 +423,10 @@
     setFormation(unit, kind) {
       if (!unit || unit.st === ROUT) return false;
       unit.form = kind;
-      unit.slots = ZS.Formation.slots(kind, unit.mem.length, unit.formOpts);
-      unit.reslot = 0;
+      unit.slots = ZS.Formation.slots(kind, unit.alive, unit.formOpts);
+      ZS.Formation.assign(unit.mem, unit.slots, unit.cx, unit.cy, unit.head);
+      unit.slotN = unit.alive;
+      unit.reslot = 2.5;
       this.orderLog.push({ t: Math.round(this.bt * 100) / 100, u: unit.uid, k: "form", f: kind });
       return true;
     }
@@ -668,6 +672,7 @@
       if (u.reslot <= 0) {
         u.reslot = 2.5;
         if (u.alive !== u.slotN) {
+          u.slots = ZS.Formation.slots(u.form, u.alive, u.formOpts);
           ZS.Formation.assign(u.mem, u.slots, u.cx, u.cy, u.head);
           u.slotN = u.alive;
         }
@@ -731,6 +736,7 @@
         } else {
           u.stallT += dt;
           if (u.stallT > STALL_GIVEUP) {
+            this.stallGiveups++;
             u.hunting = false;
             this._nextOrder(u);
             return;
@@ -914,8 +920,8 @@
         const cohesion = u.cohesion || 0.72;
         txv += (dx / d) * sp * cohesion;
         tyv += (dy / d) * sp * cohesion;
-        a.a = faceHead ? u.head : Math.atan2(dy, dx);
-      } else if (faceHead) a.a = u.head;
+        a.a = faceHead ? u.head + (a.sf || 0) : Math.atan2(dy, dx);
+      } else if (faceHead) a.a = u.head + (a.sf || 0);
       a.vx += (txv - a.vx) * k;
       a.vy += (tyv - a.vy) * k;
       a.wantMove = d > 9 || u.dx * u.dx + u.dy * u.dy > 16;
@@ -1310,8 +1316,9 @@
           un,
           sx: s.x,
           sy: s.y,
+          sf: s.face || 0,
           hp: HP[agentType],
-          head: opt.head,
+          head: opt.head + (s.face || 0),
           flag: isBearer ? u.flag : null,
         });
         agents.push(a);
@@ -1587,7 +1594,7 @@
             y: p.y,
             head,
             form: "column",
-            formOpts: { ranks: 2, spacing: 34 },
+            formOpts: { cols: 2, spacing: 34 },
           }),
         );
       }
@@ -1603,7 +1610,7 @@
             y: p.y,
             head,
             form: "column",
-            formOpts: { ranks: 2 },
+            formOpts: { cols: 2 },
           }),
         );
       }
@@ -1667,6 +1674,7 @@
       this.stalemate = false;
       this.overT = 0;
       this.lastBloodT = 0;
+      this.stallGiveups = 0;
       this.units = [];
       this.generals = [];
       this.nextUid = 1;

@@ -19,19 +19,26 @@
 
   const SP = 13; // slot spacing; matches the packed-rank sepR the engine uses
 
+  function gap(o) {
+    const value = Number(o.spacing);
+    return value > 0 ? value : SP;
+  }
+
   /* Each generator fills `out` with {x, y} records and returns it. They are
      called on re-solve only, so allocating the records is fine. */
   const KINDS = {
     /* Wide and shallow: the default battle line. */
     line(n, o) {
-      const ranks = Math.max(1, o.ranks || 4);
+      const ranks = Math.min(n, Math.max(1, o.ranks || 4));
       const cols = Math.max(1, Math.ceil(n / ranks));
-      return grid(n, cols, SP, SP, 0);
+      const spacing = gap(o);
+      return grid(n, cols, spacing, spacing, 0);
     },
     /* Narrow and deep: marches through gaps, weak frontage. */
     column(n, o) {
-      const cols = Math.max(1, o.cols || 6);
-      return grid(n, cols, SP, SP, 0);
+      const cols = Math.min(n, Math.max(1, o.cols || Math.round(Math.sqrt(n) * 0.5)));
+      const spacing = gap(o);
+      return grid(n, cols, spacing, spacing, 0);
     },
     /* A blunt arrowhead: fewer men in front, mass behind. Cavalry default. */
     wedge(n) {
@@ -47,17 +54,18 @@
       }
       return out;
     },
-    /* A hollow-ish box facing every way: slow, hard to flank. */
-    square(n) {
-      const side = Math.max(2, Math.round(Math.sqrt(n)));
-      return grid(n, side, SP, SP, 0);
+    /* Concentric perimeter ranks: the outside stays visibly square while the
+       open centre and outward facings distinguish it from a deep line. */
+    square(n, o) {
+      return square(n, o);
     },
-    /* Loose order: the same footprint at double spacing, so missiles and
-       charges bite less and the block moves through broken ground. */
+    /* Loose order: broad but bounded, with staggered ranks. Deriving the
+       frontage from sqrt(n) avoids the kilometre-wide three-rank strip the
+       original generator made for large units. */
     skirmish(n, o) {
-      const ranks = Math.max(1, o.ranks || 3);
-      const cols = Math.max(1, Math.ceil(n / ranks));
-      return grid(n, cols, SP * 1.9, SP * 1.7, 0);
+      const spacing = gap(o);
+      const cols = Math.min(n, Math.max(1, o.cols || Math.ceil(Math.sqrt(n * 2.1))));
+      return looseGrid(n, cols, spacing * 1.65, spacing * 1.55);
     },
   };
 
@@ -76,11 +84,85 @@
     return out;
   }
 
+  function looseGrid(n, cols, sx, sy) {
+    const out = [];
+    const rows = Math.ceil(n / cols);
+    for (let row = 0, placed = 0; row < rows; row++) {
+      const count = Math.min(cols, n - placed);
+      const stagger = (row & 1 ? 0.22 : -0.22) * sx;
+      for (let col = 0; col < count; col++, placed++) {
+        out.push({
+          x: (col - (count - 1) / 2) * sx + stagger,
+          y: ((rows - 1) / 2 - row) * sy,
+        });
+      }
+    }
+    return out;
+  }
+
+  function perimeterCount(side) {
+    if (side <= 0) return 0;
+    if (side === 1) return 1;
+    return side * 4 - 4;
+  }
+
+  function squareCapacity(side, depth) {
+    let total = 0;
+    for (let ring = 0; ring < depth; ring++) total += perimeterCount(side - ring * 2);
+    return total;
+  }
+
+  function squareRing(side, ring, spacing) {
+    const out = [];
+    const lo = ring;
+    const hi = side - 1 - ring;
+    const half = (side - 1) / 2;
+    if (lo > hi) return out;
+    if (lo === hi) return [{ x: 0, y: 0, face: 0 }];
+    for (let x = lo; x <= hi; x++) {
+      out.push({ x: (x - half) * spacing, y: (hi - half) * spacing, face: 0 });
+    }
+    for (let y = hi - 1; y >= lo; y--) {
+      out.push({ x: (hi - half) * spacing, y: (y - half) * spacing, face: -Math.PI / 2 });
+    }
+    for (let x = hi - 1; x >= lo; x--) {
+      out.push({ x: (x - half) * spacing, y: (lo - half) * spacing, face: Math.PI });
+    }
+    for (let y = lo + 1; y < hi; y++) {
+      out.push({ x: (lo - half) * spacing, y: (y - half) * spacing, face: Math.PI / 2 });
+    }
+    return out;
+  }
+
+  function square(n, o) {
+    if (!n) return [];
+    const spacing = gap(o);
+    const depth = Math.max(1, o.depth || Math.min(4, Math.max(2, Math.round(Math.sqrt(n) / 4))));
+    let side = 1;
+    while (squareCapacity(side, depth) < n) side++;
+
+    const out = [];
+    for (let ring = 0; ring < depth && out.length < n; ring++) {
+      const candidates = squareRing(side, ring, spacing);
+      const remaining = n - out.length;
+      if (remaining >= candidates.length) {
+        out.push(...candidates);
+        continue;
+      }
+      /* Spread an incomplete inner rank around all four faces instead of
+         filling one side first. That keeps casualty-resolved squares balanced. */
+      for (let i = 0; i < remaining; i++) {
+        out.push(candidates[Math.floor((i * candidates.length) / remaining)]);
+      }
+    }
+    return out;
+  }
+
   const Formation = {
     SP,
     KINDS: Object.keys(KINDS),
 
-    /* n slots for `kind`. `opts` is per-kind (ranks / cols).
+    /* n slots for `kind`. `opts` is per-kind (ranks / cols / depth / spacing).
 
        Always re-centred on the slots' own centroid. A generator that is not
        balanced about the origin — the wedge grows backwards from its point —
@@ -127,7 +209,10 @@
       const live = [];
       for (const m of members) if (!m.dead && !m.routFlag) live.push(m);
       /* Slots nearest the front go first. */
-      const order = slots.slice(0, live.length).sort((a, b) => b.y - a.y);
+      const order = slots
+        .slice()
+        .sort((a, b) => b.y - a.y)
+        .slice(0, live.length);
       const taken = new Uint8Array(live.length);
       for (const s of order) {
         const wx = cx + s.x * sh + s.y * ch;
@@ -148,6 +233,7 @@
         taken[best] = 1;
         live[best].sx = s.x;
         live[best].sy = s.y;
+        live[best].sf = s.face || 0;
       }
       return live.length;
     },

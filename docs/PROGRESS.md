@@ -16,22 +16,21 @@ re-deriving anything.
 | | |
 |---|---|
 | **Phase** | **P2 — battle depth** |
-| **Status** | 🚧 **in progress** (P0–P1 ✅) |
-| **Verify** | P2 local browser probe: **6/6 seeds resolve in 62–119 s**, fixed-seed replay is identical, every commander branch and the feedback clock pass; headed Chrome holds **60.0 fps at 2,000/side**; original three pages boot clean<br>P1 baseline (machine-local suites): 62 / 45 / 23 assertions; 16-seed sweep green before P2 |
-| **Updated** | 2026-08-30 |
+| **Status** | ✅ **complete** (P0–P2 ✅) |
+| **Verify** | Formation browser probe: all five shapes march and settle at **6–11 px mean slot error**; a 35% casualty cut regenerates a 150-man square to exactly 98 slots. Aggressive 16-seed sweep: **16/16 resolve in 40.8–129.6 s**, no stalemates; seed 47 repeats exactly at 78.367 s. Earlier P2 probe: 6/6 passive samples resolve in 62–119 s; headed Chrome holds **60.0 fps at 2,000/side**; original three pages boot clean<br>P1 baseline (machine-local suites): 62 / 45 / 23 assertions; 16-seed sweep green before P2 |
+| **Updated** | 2026-08-31 |
 
 ### Next action
 
-**Continue P2 — formation tuning.** Morale, generals, the first active ability,
-combat feedback, the enemy commander and render LOD are complete. One P2 item
-remains:
+**Start P3 — campaign skeleton.** P2 is complete: formations, morale, generals,
+the first active ability, combat feedback, the enemy commander and render LOD
+are all in and verified. Build the paper campaign map, provinces, armies and
+turn phases next; `SANGUO-DESIGN.md` §3 is the contract.
 
-1. **Formation tuning** — P1 wires all five generators and really only tunes
-   `line` and `wedge`; tune column / square / skirmish and visually verify every
-   transition under movement and casualties.
-
-The fixed sim step P2 also lists is **already done** — P1's determinism test
-needed it. See decision 12 below.
+Battle pacing remains deliberately open under issue 3. The formation pass added
+`scenario.stallGiveups` instrumentation; its first aggressive-order sweep shows
+the watchdog is active often enough that the timeout must not be tuned in
+isolation.
 
 ---
 
@@ -43,7 +42,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 |---|---|---|
 | P0 | boot to MENU, font, i18n, Auth/Store/SaveManager round-trip | ✅ |
 | P1 | Skirmish battle: `ScenarioSanguo` + command layer | ✅ |
-| P2 | Battle depth: formations, morale, abilities, fixed step, LOD | 🚧 |
+| P2 | Battle depth: formations, morale, abilities, fixed step, LOD | ✅ |
 | P3 | Campaign skeleton: map, provinces, armies, turn phases | ☐ |
 | P4 | The handoff: `BattleSetup`/`BattleResult`, field kinds, auto-resolve | ☐ |
 | P5 | Generals as RPG: xp, skills, items, loyalty, duels | ☐ |
@@ -181,7 +180,7 @@ the rest. Settings.music flows into `music.setVolume` automatically.
 | 2.6 | Charge shake, general-kill hitstop and hit-vector bursts | ✅ | `js/battle/feel.js`, `js/camera.js`, `js/main.js`, `js/scenarios/sanguo.js` |
 | 2.7 | Influence-map enemy commander | ✅ | `js/battle/commander-ai.js` |
 | 2.8 | Render LOD + headed `FIELD_CAP` fps probe | ✅ | `js/figure/figure.js`, `js/scenarios/sanguo.js` |
-| 2.9 | Tune column / square / skirmish formations | ☐ | `js/battle/formation.js` |
+| 2.9 | Tune column / square / skirmish formations | ✅ | `js/battle/formation.js`, `js/scenarios/sanguo.js` |
 
 ### What the P2 slice proves so far
 
@@ -215,6 +214,15 @@ the rest. Settings.music flows into `music.setVolume` automatically.
   **12.4 ms to 0.8 ms** while close zoom stayed effectively flat
   (**7.2 → 7.0 ms**). The real rAF probe held **60.0 fps**, p95 16.8 ms and max
   17.7 ms, so `FIELD_CAP = 2000` per side is confirmed
+- column width now scales with block size; square uses balanced concentric
+  perimeter ranks whose soldiers face outward; skirmish uses bounded staggered
+  ranks instead of inheriting another formation's depth option. All five shapes
+  reassign immediately while paused, settle while marching, and regenerate
+  an exact smaller footprint when casualties leave holes
+- a 16-seed aggressive-order diagnostic resolves every battle without a
+  stalemate in 40.8–129.6 s. It also records 20 `STALL_GIVEUP` watchdog drops in
+  15 battles, which is why issue 3 remains open rather than hiding congestion
+  behind a different timeout
 - `zombiesim.html`, `battle.html` and `hold.html` still boot their own scenario
   with their expected populations, zero shake offsets and no page errors
 
@@ -507,3 +515,13 @@ Every one of these also presented as "the battle stalls":
   actual 180-frame rAF sample held 60.0 fps (p95 16.8 ms, max 17.7 ms), so the
   provisional `FIELD_CAP = 2000` is accepted. Normal 2,000-man fit view remains
   individual, not massed.
+- **2026-08-31** — completed P2 formation tuning. Column is adaptively narrow,
+  square is a hollow concentric perimeter with outward facings, and skirmish is
+  a bounded staggered loose order. Formation changes assign immediately while
+  paused and casualty re-solves regenerate the footprint at the surviving
+  count. An isolated browser pass marched all five shapes at 6–11 px mean slot
+  error and shrank a 150-man square to 98 exact slots after 35% losses. Seed 47
+  replayed identically at 78.367 s; all three legacy pages booted clean. Added
+  `stallGiveups` instrumentation: an aggressive 16-seed diagnostic resolved in
+  40.8–129.6 s but invoked the watchdog 20 times across 15 battles, keeping
+  pacing issue 3 open.
