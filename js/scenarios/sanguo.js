@@ -76,6 +76,10 @@
   const STALEMATE_EDGE = 0.1; // strength gap below which a called field is a draw
   const FIELD_CAP = 2000; // provisional cap, validated by the P2 LOD probe
 
+  /* Presentation-only battle barks. Picks use ZS.hash instead of the combat
+     RNG, so chatter cannot alter a deterministic replay. */
+  const BARK_MAX = 12;
+
   const TG = { x: 0, y: 0 }; // scratch: no per-frame allocation
   const FLOW = { x: 0, y: 0 };
 
@@ -160,6 +164,10 @@
       this.feel = null;
       this.commander = null;
       this.simHold = false;
+      this.talkingNow = 0;
+      this.barkT = 0.8;
+      this.barkSeq = 0;
+      this.fallenFlags = [];
     }
 
     /* ---------- deterministic randomness (§3.6) ---------- */
@@ -330,6 +338,9 @@
         say: null,
         sayT: 0,
         sayMax: 0,
+        barkCd: 0,
+        flag: extra.flag || null,
+        flagDropped: false,
         // sanguo fields
         side: extra.side,
         faction: extra.faction,
@@ -499,10 +510,12 @@
     frame(agents, dt, t, grid) {
       if (this.t0 === null) this.t0 = t;
       this.bt = t - this.t0;
+      this.talkingNow = 0;
 
       // routed men who leave the field are gone for good
       for (let i = 0; i < agents.length; i++) {
         const a = agents[i];
+        if (a.sayT > 0) this.talkingNow++;
         if (
           a.free &&
           !a.dead &&
@@ -577,6 +590,68 @@
 
       if (!this.over && this.commander) this.commander.update(dt);
       this._checkEnd();
+      this._battleBarks(agents, dt);
+    }
+
+    /* One field-wide scheduler keeps the page readable while individual
+       cooldowns stop the same soldier from monopolising the conversation. */
+    _battleBarks(agents, dt) {
+      this.barkT -= dt;
+      if (this.barkT > 0 || this.talkingNow >= BARK_MAX || !agents.length) return;
+      const seq = ++this.barkSeq;
+      this.barkT = 0.55 + ZS.hash(seq * 71 + 19) * 0.8;
+      const start = (ZS.hash(seq * 97 + 31) * agents.length) | 0;
+      let a = null;
+      for (let i = 0; i < agents.length; i++) {
+        const candidate = agents[(start + i) % agents.length];
+        if (!candidate.dead && !candidate.gone && candidate.sayT <= 0 && candidate.barkCd <= 0) {
+          a = candidate;
+          break;
+        }
+      }
+      if (!a) return;
+      const u = this.units[a.un];
+      if (!u) return;
+
+      let bucket = "steady";
+      if (a.fleeing || a.routFlag || u.st === ROUT) bucket = "fear";
+      else if (this.over) bucket = this.result === a.side ? "cheer" : "fear";
+      else if (u.morState === ZS.BattleMorale.WAVERING) bucket = "losing";
+      else {
+        const own = this.sides[a.side];
+        const foe = this.sides[1 - a.side];
+        const ownStrength = own.alive / Math.max(1, own.total0);
+        const foeStrength = foe.alive / Math.max(1, foe.total0);
+        const edge = ownStrength - foeStrength;
+        if (u.st === CHARGE) bucket = "charge";
+        else if (u.contact > 0)
+          bucket = edge > 0.12 ? "winning" : edge < -0.12 ? "losing" : "clash";
+        else if (a.fatigue > 0.72) bucket = "tired";
+        else if (edge > 0.16) bucket = "winning";
+        else if (edge < -0.16) bucket = "losing";
+        else if (a.general && ZS.hash(seq * 43 + a.seed) < 0.45) bucket = "general";
+      }
+      this._sayBattle(a, bucket, seq);
+    }
+
+    _sayBattle(a, bucket, seq) {
+      const barkPools = ZS.BattleBarks && ZS.BattleBarks.pools;
+      if (!barkPools) return;
+      const record = barkPools[bucket] || barkPools.steady;
+      const locale = ZS.i18n && ZS.i18n.locale === "en" ? "en" : "zh-tw";
+      const pool = record[locale];
+      a.say = pool[(ZS.hash(seq * 131 + a.seed) * pool.length) | 0];
+      a.sayT = a.sayMax = 1.35 + ZS.hash(seq * 59 + a.seed) * 0.55;
+      a.barkCd = 5 + ZS.hash(seq * 83 + a.seed) * 5;
+      this.talkingNow++;
+      if (!ZS.sound) return;
+      const event =
+        bucket === "fear" || bucket === "losing"
+          ? "v_gasp"
+          : bucket === "charge" || bucket === "cheer" || bucket === "general"
+            ? "v_shout"
+            : "v_callout";
+      ZS.sound.event(event, a.x, a.y);
     }
 
     /* Move the unit's centroid along its flow field, or hold. */
@@ -795,6 +870,7 @@
          already counted in `dead`, and the side ledger drifted negative. */
       if (a.dead) return;
       a.rallyT = Math.max(0, a.rallyT - dt);
+      a.barkCd = Math.max(0, a.barkCd - dt);
       const u = this.units[a.un];
       // fatigue accrues while sprinting or swinging, and recovers standing still
       const sp = Math.hypot(a.vx, a.vy);
@@ -1096,6 +1172,7 @@
 
     _kill(a, killer) {
       if (a.dead) return; // two men can land the killing blow in one frame
+      if (a.flag && !a.flagDropped) this._dropFlag(a);
       a.dead = true;
       a.hp = 0;
       const unit = this.units[a.un];
@@ -1125,6 +1202,7 @@
 
     _setRout(a) {
       if (a.routFlag || a.dead) return;
+      if (a.flag && !a.flagDropped) this._dropFlag(a);
       a.routFlag = 1;
       a.fleeing = true;
       a.free = true;
@@ -1133,6 +1211,19 @@
       s.alive--;
       if (a.general && this.morale) this.morale.generalLost(a);
       this.fx.push({ x: a.x, y: a.y - 6, t: 0.3, poof: true, seed: a.seed });
+    }
+
+    _dropFlag(a) {
+      a.flagDropped = true;
+      const u = this.units[a.un];
+      if (u) u.flagUp = false;
+      this.fallenFlags.push({
+        x: a.x,
+        y: a.y,
+        an: a.a + (ZS.hash(a.seed + 47) * 2 - 1) * 0.35,
+        flag: a.flag,
+        seed: a.seed,
+      });
     }
 
     /* ---------- deployment ---------- */
@@ -1183,6 +1274,8 @@
         stallT: 0, // seconds since that got any better
         sel: false,
         mem: [],
+        flag: opt.side === 0 ? ZS.flag.PRESETS.liu : ZS.flag.PRESETS.cao,
+        flagUp: true,
         typeSpd: SPD[type],
         typeChargeSpd: CHARGE_SPD[type] || SPD[type],
       };
@@ -1205,17 +1298,21 @@
           x = p.x;
           y = p.y;
         }
-        // one 什長 at the head of the block; the rest are 兵
+        /* The head-rank man carries 劉 for the player or 曹 for the computer.
+           He replaces one ordinary soldier, so unit population stays exact. */
+        const isBearer = k === 0;
+        const agentType = isBearer ? F().STANDARD : type;
         const a = this.makeAgent(x, y, 0, {
           side: opt.side,
           faction: opt.faction,
-          type,
-          tier: k === 0 ? F().NCO : F().TROOPER,
+          type: agentType,
+          tier: isBearer ? F().NCO : F().TROOPER,
           un,
           sx: s.x,
           sy: s.y,
-          hp: HP[type],
+          hp: HP[agentType],
           head: opt.head,
+          flag: isBearer ? u.flag : null,
         });
         agents.push(a);
         u.mem.push(a);
@@ -1260,7 +1357,14 @@
           }
         }
         if (!unit) unit = units[i % units.length];
-        const a = unit.mem[0];
+        let a = null;
+        for (let k = 0; k < unit.mem.length; k++) {
+          if (!unit.mem[k].flag) {
+            a = unit.mem[k];
+            break;
+          }
+        }
+        if (!a) a = unit.mem[0];
         if (!a) continue;
         const tong = ZS.clamp(Number(spec.tong) || 50, 1, 100);
         a.tier = F().GENERAL;
@@ -1563,6 +1667,10 @@
       this.generals = [];
       this.nextUid = 1;
       this.orderLog = [];
+      this.talkingNow = 0;
+      this.barkT = 0.8;
+      this.barkSeq = 0;
+      this.fallenFlags = [];
       this.sides = [
         { total0: 0, dead: 0, routed: 0, alive: 0, gone: 0 },
         { total0: 0, dead: 0, routed: 0, alive: 0, gone: 0 },
@@ -1803,6 +1911,21 @@
             c.fill();
           }
         }
+      }
+    }
+
+    /* Fallen standards belong on the ground pass, beneath feet and bodies. */
+    drawGround(c, _world, t) {
+      for (let i = 0; i < this.fallenFlags.length; i++) {
+        const f = this.fallenFlags[i];
+        c.save();
+        c.translate(f.x, f.y);
+        c.rotate(f.an);
+        c.strokeStyle = "rgba(92,72,50,0.82)";
+        c.lineWidth = 2;
+        ZS.wline(c, -18, 1, 22, -1, f.seed + 301, 0.7);
+        if (ZS.flag) ZS.flag.draw(c, f.flag, -15, -12, 25, 14, t);
+        c.restore();
       }
     }
 

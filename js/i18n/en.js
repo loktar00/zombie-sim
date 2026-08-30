@@ -94,7 +94,6 @@
     "battle.general.fire": "General Huo",
     "battle.general.edge": "General Feng",
     "battle.general.unknown": "General",
-
     "err.saveFailed": "Save failed: {code}",
     "err.loadFailed": "Load failed: {code}",
     "err.futureSave": "This save comes from a newer build and cannot be read.",

@@ -115,7 +115,7 @@
     ZS.wcirc(c, hx, hy, 4.2 * k, s + 29, 0.8);
 
     // standard bearers replace the personal weapon with a tall pole + cloth
-    if (a.type === STANDARD) {
+    if (a.type === STANDARD && !a.flagDropped) {
       drawStandard(c, a, hx, hy, k);
     } else {
       drawWeapon(c, a, hx, hy, k);
@@ -156,7 +156,7 @@
     c.lineCap = "round";
     ZS.wline(c, hx, hy + 4 * k, a.x, a.y, s + 23, 0.8);
     ZS.wcirc(c, hx, hy, 4 * k, s + 29, 0.65);
-    if (a.type === STANDARD) drawStandard(c, a, hx, hy, k);
+    if (a.type === STANDARD && !a.flagDropped) drawStandard(c, a, hx, hy, k);
     else drawWeapon(c, a, hx, hy, k);
   }
 
@@ -258,16 +258,21 @@
     }
     const fx = u.cx + 5;
     const fy = u.cy - 25;
-    c.strokeStyle = INK;
-    c.lineWidth = 1.1;
-    ZS.wline(c, fx, u.cy, fx, fy, seed + 71, 0.6);
-    setPoint(MASS_FLAG[0], fx, fy);
-    setPoint(MASS_FLAG[1], fx + 10, fy + 2);
-    setPoint(MASS_FLAG[2], fx, fy + 6);
-    c.fillStyle = wash(u.faction, 0.52);
-    ZS.wpoly(c, MASS_FLAG, seed + 73, 0.55, true);
-    c.fill();
-    c.stroke();
+    if (u.flagUp) {
+      c.strokeStyle = INK;
+      c.lineWidth = 1.1;
+      ZS.wline(c, fx, u.cy, fx, fy, seed + 71, 0.6);
+    }
+    if (u.flagUp && u.flag && ZS.flag) ZS.flag.draw(c, u.flag, fx, fy, 15, 10, 0);
+    else if (u.flagUp) {
+      setPoint(MASS_FLAG[0], fx, fy);
+      setPoint(MASS_FLAG[1], fx + 10, fy + 2);
+      setPoint(MASS_FLAG[2], fx, fy + 6);
+      c.fillStyle = wash(u.faction, 0.52);
+      ZS.wpoly(c, MASS_FLAG, seed + 73, 0.55, true);
+      c.fill();
+      c.stroke();
+    }
   }
 
   function setPoint(p, x, y) {

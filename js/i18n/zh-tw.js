@@ -93,7 +93,6 @@
     "battle.general.fire": "火將",
     "battle.general.edge": "鋒將",
     "battle.general.unknown": "將軍",
-
     "err.saveFailed": "存檔失敗：{code}",
     "err.loadFailed": "讀取失敗：{code}",
     "err.futureSave": "此存檔來自較新的版本，無法讀取。",
