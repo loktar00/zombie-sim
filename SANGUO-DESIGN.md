@@ -199,7 +199,7 @@ strong passive.
 ```js
 {
   seed,                         // hash(campaignSeed, turn, atkArmyId, defArmyId) — deterministic
-  field: { terrain, biome },    // from the province (plain / river / hills / forest / fort)
+  field: { kind, terrain, biome },   // kind: "open" | "town" | "fort"  (see below)
   sides: [
     { factionId, banner, comp:{spear,dao,crossbow,cav},   // comp -> integer men per type
       onField, reserve,                                    // men deployed now vs streaming in
@@ -214,6 +214,18 @@ strong passive.
 via the Cannae `maintain` edge path). 1 man = 1 figure — `comp` percentages
 become integer per-type men directly, and the Cannae formation code already
 lays men into slots.
+
+**Field kinds (DECIDED — Q4), each reusing an existing page's terrain:**
+
+| `kind` | When | Reuses | Notes |
+|---|---|---|---|
+| `open` | armies clash in open country | the Cannae battlefield (`ScenarioSanguo.terrain` lays plain/river/hills/forest) | the default; `objective` = `annihilate` / `rout` / `break through` |
+| `town` | battle inside a held city with no standing wall | **`index.html` / the Outbreak town** — `ZS.Buildings.generate` streets, buildings, doors; `walkBlocked` per unit | street fighting: LOS matters, cavalry weak, `objective` usually `rout` |
+| `fort` | attacking a walled/besieged city | **`hold.html` / the Hold** — `ZS.Tiles` ground grid + `js/blocks.js` wall/gate blocks with door-HP; defender deploys on the ring | attacker must breach a gate/wall (block HP, reuse the Outbreak door-chew + grenade/fire), defender gets a morale bonus; `objective` = `hold N turns` (defender) / `break through` (attacker). Wall-assault *tech* (ladders/rams/towers) is deferred — v1 breach = focus-fire a gate block. |
+
+`ScenarioSanguo` picks its `terrain()` implementation off `field.kind`, so all
+three share one scenario pack. The province record carries `hasWall` and a
+`biome` that decide `kind` at handoff time.
 
 **Battle → Campaign** returns a `BattleResult`:
 
@@ -385,13 +397,27 @@ that never changes (skill definitions, place names, the general almanac) is
 - **Autosave:** one dedicated slot, written only at the end of the World phase
   (a safe boundary — never mid-resolve), throttled to once per turn.
 
-### 5.5 Server backend (when it happens)
+### 5.5 Identity & the server backend (staged)
 
-Out of scope to build now, but the shape it must expose so `RemoteStore` is the
-only new code: `GET/PUT/DELETE /saves/{slot}` returning/accepting the raw
-snapshot string, `GET /saves` for the index, Bearer auth, `ETag`/`If-Match` for
-conflict detection. Anything RESTful and boring. The game stays fully playable
-with no server (`LocalStore` is the default binding).
+**Stage 1 (v1, build now): anonymous, local only.** No accounts, no login. On
+first run `SaveManager` mints a random `deviceId` (`crypto.randomUUID()`) into
+`hsg:v1:device` and stamps it on every snapshot's `meta`. `LocalStore` is the
+only binding. Nothing to authenticate.
+
+**Stage 2 (later): OAuth for cloud saves + multiplayer.** Adds a `ZS.Auth` seam
+— `getToken()` / `isSignedIn()` / `signIn()` / `signOut()` — with two
+implementations: `AnonAuth` (returns the `deviceId`, Stage 1) and `OAuthAuth`
+(PKCE flow, returns a bearer token). `RemoteStore` calls `ZS.Auth.getToken()`
+for its `Authorization` header and is otherwise unchanged. Switching a player
+from anon → signed-in migrates the local `deviceId` save up to their account on
+first sync. The `Store` interface (§5.2) never changes.
+
+**Server shape** `RemoteStore` will expect (so it's the only new client code):
+`GET/PUT/DELETE /saves/{slot}` on the raw snapshot string, `GET /saves` for the
+index, bearer auth (anon device token *or* OAuth token — server treats both as
+opaque principals), `ETag`/`If-Match` for conflict detection. RESTful and
+boring. The game stays fully playable with no server — `LocalStore` is the
+default binding forever.
 
 ---
 
@@ -437,14 +463,33 @@ fields. One `t()` path handles both.
 
 ### 6.3 Fonts on `file://`
 
-No webfont fetch is possible offline, and a bundled CJK font is megabytes.
-Decision: **system CJK stack** for all text —
-`"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif` for
-DOM UI, and the same family passed to `ctx.font` for canvas labels. To keep
-canvas text in the boil style, draw each glyph with a tiny per-glyph
-`ZS.jit`-driven offset/rotation (≤0.6 px, ≤1.5°) so headings shimmer like the
-lines do. Latin/numerals can additionally use a hand-drawn stroke font later;
-CJK stays system-rendered. **Open question §11.**
+The look wants a **brush-kai (楷體) calligraphic** face, not a gothic sans.
+
+**Chosen face: LXGW WenKai TC — 霞鶩文楷 台灣繁體** ([GitHub](https://github.com/lxgw/LxgwWenkaiTC),
+[Google Fonts](https://fonts.google.com/specimen/LXGW+WenKai+TC)).
+- **SIL Open Font License 1.1** — free commercial use, embeddable, no notice.
+- Brush-kai style (derived from Fontworks' Klee One), which already sits close
+  to the hand-drawn boil aesthetic.
+- Traditional Chinese coverage: ~9 810 IICore Han + Big5 + HK/TW supplementary
+  + GB/T — enough for zh-tw UI and the general/place almanac.
+- Fallback chain (kai first, then any CJK):
+  `"LXGW WenKai TC","LXGW WenKai","DFKai-SB","BiauKai","Kaiti TC",KaiTi,STKaiti,serif`.
+  (Latin/numerals: a hand-drawn stroke face later; fine as fallback for now.)
+
+**Shipping it without a build step / without a fetch:** the full Regular woff2
+is ~8–10 MB — too big to bundle whole. The game's text is a *bounded* set (the
+`i18n` tables + every `{zh-tw}` string in `data/*`), so an **asset-time subset**
+(dev tooling — `pyftsubset` / `hb-subset`, same category as oxfmt/oxlint, not a
+runtime build) produces a `fonts/lxgw-wenkai-tc.subset.woff2` of ~0.3–1 MB
+covering exactly the glyphs used, refreshed whenever `data/*` gains names. One
+`@font-face` in `sanguo.html`'s inline CSS points at that local file; a
+`.verify/` check fails the build if any rendered string contains a glyph
+outside the subset (falls back to system kai, but we want to know).
+
+**Canvas text** passes the same family to `ctx.font`. To keep it in the boil
+style, draw per-glyph with a tiny `ZS.jit`-driven offset/rotation (≤0.6 px,
+≤1.5°) so headings shimmer like the strokes. A glyph atlas is **not** needed —
+`fillText` with the subset font is fine at the label volumes here.
 
 ### 6.4 Rules
 
@@ -556,10 +601,14 @@ with the dynamic tokens drawn on top each frame.
 ## 9. File plan
 
 ```
-sanguo.html                       the only page: canvas + <div id="ui">, sets ZS_SCEN
+sanguo.html                       the only page: canvas + <div id="ui">, sets ZS_SCEN;
+                                  inline @font-face -> fonts/lxgw-wenkai-tc.subset.woff2
+fonts/lxgw-wenkai-tc.subset.woff2 asset-time glyph subset of LXGW WenKai TC (OFL)  (§6.3)
+tools/subset-font.sh              dev-only: rebuild the subset from data/* + i18n/* (pyftsubset)
 js/store/store.js                 ZS.Store contract + MemoryStore
 js/store/local.js                 ZS.LocalStore   (localStorage, shadow+bak)
-js/store/remote.js                ZS.RemoteStore  (fetch, optional, backoff)
+js/store/remote.js                ZS.RemoteStore  (fetch, optional, backoff; calls ZS.Auth)
+js/auth/auth.js                   ZS.Auth seam + AnonAuth (deviceId); OAuthAuth added in Stage 2  (§5.5)
 js/save/save-manager.js           ZS.SaveManager: schema, migrate chain, capture/apply, autosave
 js/i18n/i18n.js                   ZS.i18n: t / n / set / fallback
 js/i18n/zh-tw.js  js/i18n/en.js   UI string tables
@@ -573,7 +622,8 @@ js/campaign/ai.js                AI faction planner (v1: greedy heuristics)
 js/campaign/autoresolve.js       closed-form battle model -> BattleResult
 js/campaign/handoff.js           BattleSetup build + BattleResult apply  (§4.3)
 js/campaign/data/*.js            generals.js, provinces.js, skills.js, items.js, events.js  (bilingual data)
-js/scenarios/sanguo.js           ScenarioSanguo — the real-time battle pack (existing contract)
+js/scenarios/sanguo.js           ScenarioSanguo — the real-time battle pack (existing contract);
+                                  terrain() branches on field.kind: open / town / fort  (§4.3)
 js/battle/command.js             selection, control groups, order queue, unit tray
 js/battle/formation.js           formation presets + slot re-solve
 js/battle/flowfield.js           ZS.FlowField — Dijkstra field for group moves
@@ -594,11 +644,11 @@ everything else is new top-level code on `window.ZS`.
 
 | Phase | Deliverable | Verify |
 |---|---|---|
-| **P0** | `sanguo.html` boots to a MENU; `ZS.i18n` with zh-tw/en toggle; `ZS.Store`+`LocalStore`+`SaveManager` round-trips a stub snapshot | Playwright: switch locale, save, reload, load, assert state |
+| **P0** | `sanguo.html` boots to a MENU; LXGW WenKai TC subset loads via local `@font-face`; `ZS.i18n` zh-tw/en toggle; `ZS.Auth`=`AnonAuth` mints a `deviceId`; `ZS.Store`+`LocalStore`+`SaveManager` round-trips a stub snapshot | Playwright: font renders (not fallback), switch locale, save, reload, load, assert state + `deviceId` stable |
 | **P1** | **Skirmish battle**: `ScenarioSanguo` = Cannae figures + `js/battle/command.js` (box-select, right-click move via flow field, control groups) + one formation. No campaign yet. | play a battle end-to-end with mouse; deterministic-seed replay test |
 | **P2** | Battle depth: formations, morale/fatigue/rout rewrite, general units + aura, one active ability, screenshake/hitstop | battle feels like command, not watching; morale curve probe |
 | **P3** | **Campaign skeleton**: paper map, provinces, 3 factions, armies, march, turn phases, recruit/develop — battles still skirmish-only | play 10 turns, autosave each World phase, reload mid-campaign |
-| **P4** | **The handoff**: `BattleSetup`/`BattleResult`, campaign battles drop into P2 battle and feed losses/xp/injuries/territory back; auto-resolve model | win a province by playing the battle; skip one, compare outcomes |
+| **P4** | **The handoff**: `BattleSetup`/`BattleResult`, campaign battles drop into P2 battle and feed losses/xp/injuries/territory back; `field.kind` = `open` first, then `town` (Outbreak buildings) + `fort` (Hold walls); auto-resolve model | win a province by playing the battle; skip one, compare outcomes; fight a `fort` breach |
 | **P5** | Generals as RPG: xp/level curve, skill unlocks, item modifiers, loyalty + defection, duels | a general levels from lvl 1→5 over a campaign; a duel kills one |
 | **P6** | AI factions plan and fight; events; after-action card; `RemoteStore` written + tested against a mock endpoint | AI takes a province from the player; swap to RemoteStore, save/load works unchanged |
 | **P7** | Balance, pacing, content pass (fill the general/province almanac), audio | full campaign playable start to a win condition |
@@ -626,22 +676,31 @@ phase" discipline as `HOLD-DESIGN.md` §10.
 - **Q7 — General permadeath:** **yes, killed generals are gone for good.**
   Captured generals are held by the enemy (recruitable/executable by them);
   wounded on a passed `zhi` death-save. See §4.3.
+- **Q — CJK font:** **LXGW WenKai TC (霞鶩文楷, SIL OFL 1.1)**, brush-kai style,
+  shipped as an asset-time glyph subset (~0.3–1 MB woff2), one local
+  `@font-face`, system-kai fallback chain. No glyph atlas. See §6.3.
+- **Q — Auto-resolve fidelity:** **±15% on losses, same winner ~95% of the
+  time.** Tuned in P4.
+- **Q — Multiplayer:** **out of scope for v1.** Keep it *possible*: battles stay
+  deterministic (seeded `ZS.rng32`, order log, no bare `Math.random`), the
+  `Store`/`Auth` seams stay clean. Not designed-for beyond that.
+- **Q — Field kinds / sieges:** **`open` / `town` / `fort`**, reusing the
+  Cannae, Outbreak (`index.html`) and Hold (`hold.html`) terrain respectively.
+  Wall-assault tech (ladders/rams/towers) deferred; v1 breach = focus-fire a
+  gate block. See §4.3.
+- **Q — Identity:** **Stage 1 anonymous local `deviceId`, no accounts.**
+  Stage 2 adds a `ZS.Auth` seam + OAuth (PKCE) for cloud saves / multiplayer;
+  `Store` interface unchanged; anon save migrates up on first sign-in. See §5.5.
 
 ### Still open
 
-1. **Canvas CJK boil** — **system font + per-glyph micro-jitter** (default) vs a
-   pre-rendered glyph atlas for the ~2 000 common hanzi (sharper boil, big
-   asset, offline-friendly but heavy).
-2. **Auto-resolve fidelity** — how close must skipped battles track played ones?
-   **±15% losses, same winner 95% of the time** (default).
-3. **Multiplayer** — **out of scope** (default), but the deterministic-battle +
-   order-log design keeps lockstep possible later. Confirm we're not designing
-   for it now.
-4. **Siege battles** — **defer the wall-assault tech** (default); a besieged
-   province fights on a "fort" field with a defender morale bonus in v1.
-5. **Server auth model** — when the backend lands, account system vs anonymous
-   device token? Doesn't block anything now; `RemoteStore` takes a token
-   string either way.
+1. **Start date** — 194 CE is only *leaning*. Pin it before the province /
+   faction / general almanac gets authored (P3, hard-needed by P7).
+2. **`FIELD_CAP` exact value** (~500/side) — a P2 perf-tuning number; validate
+   the total-figure budget against the engine's ~910-agent fit-view envelope,
+   accounting for `town`/`fort` fields having buildings on screen too.
+3. **Win condition(s)** for a campaign — conquest-only, or also a turn limit /
+   score / historical objectives. Needed by P7; affects AI goals in P6.
 
 ---
 
@@ -657,6 +716,8 @@ phase" discipline as `HOLD-DESIGN.md` §10.
 | No-overlap crowd | `ZS.updateAgents` (`SEP_R/SEP_CORE`, `sepR` override) | Cannae already tunes `sepR:13` for packed ranks |
 | Formation slots + step machine | `js/scenarios/cannae.js` | the `slot` + per-unit step script — swap the script source for player orders |
 | Large-battle choreography reference | `cannae.js` crescent/rout/hunt | morale, `a.free` routers, edge-stream, `HUNT_FRAC` all reusable |
+| `town` battlefield | `js/buildings.js` (`ZS.Buildings.generate`), the Outbreak town | streets/buildings/doors + `walkBlocked`; from `index.html` |
+| `fort` battlefield | `js/tiles.js` (`ZS.Tiles`) + `js/blocks.js`, the Hold | ring wall / gate blocks with door-HP, tile ground; from `hold.html` |
 | Y-sorted scene + HUD pipeline | `ZS.drawScene`, `scenario.hud` | battle HUD, after-action card via `overlay()` |
 | Transient FX | `ZS.fx` (`{t}` decay/prune) | tracers, blood, dust, ability bursts |
 | Spatialized audio, no assets | `ZS.sound` (`event/tick`, formant voices) | battle cues; the scenario names events |
