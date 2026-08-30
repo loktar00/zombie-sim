@@ -2,10 +2,31 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Sanguo",
+      "name": "火柴三國 (index.html)",
       "type": "pwa-chrome",
       "request": "launch",
-      "file": "${workspaceFolder}/sanguo.html",
+      "file": "${workspaceFolder}/index.html",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "The Outbreak (zombiesim.html)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "file": "${workspaceFolder}/zombiesim.html",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Cannae (battle.html)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "file": "${workspaceFolder}/battle.html",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "The Hold (hold.html)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "file": "${workspaceFolder}/hold.html",
       "webRoot": "${workspaceFolder}"
     }
   ]

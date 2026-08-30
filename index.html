@@ -1,28 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-tw">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>The Outbreak — a sketch sim</title>
+<title>火柴三國 — Matchstick Three Kingdoms</title>
 <style>
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#efe8d8;}
-  #c{display:block;touch-action:none;-webkit-user-select:none;user-select:none;}
+  /* Brush-kai. Over http this rule loads the subset directly; on file:// the
+     CORS-mode font fetch is refused and js/fonts/font.js loads the same bytes
+     from a data: URI instead. Either way the stack below is the fallback. */
+  @font-face{
+    font-family:"LXGW WenKai TC";
+    src:url("fonts/lxgw-wenkai-tc.subset.woff2") format("woff2");
+    font-weight:400;
+    font-style:normal;
+    font-display:swap;
+  }
+
+  :root{
+    --paper:#f3edde;
+    --page:#efe8d8;
+    --ink:#3d342b;
+    --ink-soft:rgba(61,52,43,0.5);
+    --ink-faint:rgba(61,52,43,0.16);
+    --kai:"LXGW WenKai TC","LXGW WenKai","DFKai-SB","BiauKai","Kaiti TC",KaiTi,STKaiti,serif;
+  }
+
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--page);}
+  #c{display:block;position:absolute;inset:0;touch-action:none;-webkit-user-select:none;user-select:none;}
+
+  #ui{
+    position:absolute;inset:0;
+    display:flex;align-items:flex-start;justify-content:center;
+    pointer-events:none;
+    font-family:var(--kai);
+    color:var(--ink);
+  }
+  #ui .panel{
+    display:none;
+    pointer-events:auto;
+    margin-top:min(54vh,calc(34vh + 190px));
+    width:min(420px,80vw);
+    max-height:44vh;
+    overflow-y:auto;
+    flex-direction:column;
+    gap:.5rem;
+  }
+  #ui .panel.on{display:flex;}
+
+  #ui h2{margin:0 0 .2rem;font-size:1.35rem;font-weight:400;letter-spacing:.06em;}
+  #ui h3{margin:.6rem 0 .1rem;font-size:.95rem;font-weight:400;color:var(--ink-soft);letter-spacing:.06em;}
+  #ui p{margin:0 0 .4rem;line-height:1.7;color:var(--ink-soft);font-size:.95rem;}
+
+  .mbtn{
+    font:inherit;font-size:1.15rem;letter-spacing:.12em;
+    color:var(--ink);background:transparent;
+    border:none;border-bottom:1.5px solid var(--ink-faint);
+    padding:.45rem .2rem;cursor:pointer;text-align:left;
+    transition:border-color .15s,transform .12s;
+  }
+  .mbtn:hover,.mbtn:focus-visible{border-bottom-color:var(--ink);transform:translateX(3px);outline:none;}
+  .mbtn.primary{font-size:1.3rem;}
+
+  .row{display:flex;align-items:center;gap:.6rem;font-size:.95rem;color:var(--ink-soft);}
+  .row.slider span{min-width:4.5rem;}
+  .row.slider input{flex:1;accent-color:#8a6a4a;}
+  .row.toggle{gap:.45rem;margin-top:.4rem;}
+
+  .chip{
+    font:inherit;font-size:.95rem;color:var(--ink-soft);
+    background:transparent;border:1.2px solid var(--ink-faint);border-radius:2px;
+    padding:.25rem .7rem;cursor:pointer;
+  }
+  .chip.on{color:var(--ink);border-color:var(--ink);}
+
+  .slots{display:flex;flex-direction:column;gap:.35rem;}
+  .slot-row{display:flex;align-items:stretch;gap:.3rem;}
+  .slot{
+    flex:1;font:inherit;text-align:left;cursor:pointer;
+    background:transparent;border:1.2px solid var(--ink-faint);border-radius:2px;
+    padding:.4rem .6rem;color:var(--ink);
+    display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;
+  }
+  .slot:hover{border-color:var(--ink);}
+  .slot-meta{font-size:.8rem;color:var(--ink-soft);}
+  .slot-del{
+    font:inherit;cursor:pointer;color:var(--ink-soft);
+    background:transparent;border:1.2px solid var(--ink-faint);border-radius:2px;
+    padding:0 .55rem;
+  }
+  .slot-del:hover{color:#963629;border-color:#963629;}
+  .empty{font-size:.9rem;}
+
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;margin:.4rem 0 .8rem;font-size:.85rem;}
+  .facts dt{color:var(--ink-soft);}
+  .facts dd{margin:0;}
+
+  /* Battle chrome: the canvas is the battle, this is the little that isn't */
+  .battlebar{
+    position:absolute;top:0;right:0;
+    display:none;gap:.4rem;align-items:center;
+    padding:.7rem 1rem;pointer-events:auto;
+  }
+  .battlebar.on{display:flex;}
+  .mbtn.small{font-size:.95rem;letter-spacing:.08em;padding:.25rem .6rem;border-bottom-width:1.2px;}
+  #ui.in-battle{align-items:stretch;}
+
+  .toast{
+    position:absolute;left:50%;bottom:6vh;transform:translateX(-50%) translateY(6px);
+    background:var(--paper);border:1.2px solid var(--ink-faint);
+    padding:.4rem .9rem;font-size:.9rem;color:var(--ink);
+    opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="ui"></div>
+
+<!-- sketch primitives (shared core, untouched) -->
 <script src="js/sketch.js"></script>
+<!-- boiling canvas type -->
+<script src="js/text.js"></script>
+<!-- persistence seam: contract, backends -->
+<script src="js/store/store.js"></script>
+<script src="js/store/local.js"></script>
+<script src="js/store/remote.js"></script>
+<!-- identity (Stage 1: anonymous deviceId) -->
+<script src="js/auth/auth.js"></script>
+<!-- schema, migrations, capture/apply -->
+<script src="js/save/save-manager.js"></script>
+<!-- localization: zh-tw default, en fallback -->
+<script src="js/i18n/i18n.js"></script>
+<script src="js/i18n/zh-tw.js"></script>
+<script src="js/i18n/en.js"></script>
+<!-- brush-kai subset: generated by tools/subset-font.py; absent until then,
+     and a missing file here degrades to the system kai fallback chain -->
+<script src="js/fonts/subset-data.js"></script>
+<script src="js/fonts/font.js"></script>
+<!-- the shared engine core, untouched. ZS_MANUAL_BOOT keeps js/main.js from
+     starting a world at load: this page has a MENU before it has a battle, and
+     ZS.App decides when ZS.Engine.start() runs -->
+<script>var ZS_MANUAL_BOOT = true;</script>
 <script src="js/grid.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/world.js"></script>
 <script src="js/buildings.js"></script>
+<script src="js/tiles.js"></script>
+<script src="js/blocks.js"></script>
 <script src="js/stains.js"></script>
 <script src="js/agents.js"></script>
 <script src="js/sim.js"></script>
-<script src="js/scenarios/zombie.js"></script>
 <script src="js/draw.js"></script>
 <script src="js/sound.js"></script>
+<!-- the battle layer -->
+<script src="js/figure/figure.js"></script>
+<script src="js/battle/flowfield.js"></script>
+<script src="js/battle/formation.js"></script>
+<script src="js/battle/command.js"></script>
+<script src="js/scenarios/sanguo.js"></script>
 <script src="js/main.js"></script>
+<!-- shell -->
+<script src="js/ui/menu.js"></script>
+<script src="js/app.js"></script>
+<script>ZS.App.boot();</script>
 </body>
 </html>

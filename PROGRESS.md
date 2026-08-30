@@ -76,7 +76,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 | 0.7 | zh-tw + en string tables | ✅ | `js/i18n/zh-tw.js`, `js/i18n/en.js` |
 | 0.8 | `ZS.App` state machine + MENU view | ✅ | `js/app.js` |
 | 0.9 | DOM menu overlay (locale toggle, slots, about) | ✅ | `js/ui/menu.js` |
-| 0.10 | `sanguo.html` page + `@font-face` + palette CSS | ✅ | `sanguo.html` |
+| 0.10 | `index.html` page + `@font-face` + palette CSS | ✅ | `index.html` |
 | 0.11 | Boiling canvas type (`ZS.boilText`) | ✅ | `js/text.js` |
 | 0.12 | Font loader (data-URI path for file://) | ✅ | `js/fonts/font.js` |
 | 0.13 | Font subset tooling + `--check` coverage mode | ✅ | `tools/subset-font.py` |
@@ -151,7 +151,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 ## Core changes made for P1
 
 `AGENTS.md` allows core changes that stay scenario-agnostic. Three were needed;
-all are opt-in and no-ops for `index.html` / `battle.html` / `hold.html`, and
+all are opt-in and no-ops for `zombiesim.html` / `battle.html` / `hold.html`, and
 `.verify/pages-regression.js` exists to keep it that way.
 
 | File | Change | Why |
@@ -194,7 +194,7 @@ live in `SANGUO-DESIGN.md` §11.)
 6. **`js/text.js` is a new file** not in the §9 file plan. §6.3 requires canvas
    type drawn per-glyph with a jit offset/rotation; that is a drawing primitive,
    not stickman art, so it did not belong in `js/figure/figure.js`. It is
-   additive — only `sanguo.html` loads it, `js/sketch.js` is untouched.
+   additive — only `index.html` loads it, `js/sketch.js` is untouched.
 7. **`ZS.App` runs its own rAF loop in P0.** `main.js` builds a world and a
    scenario at load, which the menu has no use for. P1 wires the engine loop for
    the BATTLE view; `App.stop()` exists so the two never run at once (§2).
@@ -365,7 +365,7 @@ Every one of these also presented as "the battle stalls":
 
 - **2026-08-30** — read `SANGUO-DESIGN.md`; created this file; built P0:
   store/auth/save seams, i18n with both tables, the app shell and menu view,
-  `sanguo.html`, boiling canvas type, the font loader and subset tool, and the
+  `index.html`, boiling canvas type, the font loader and subset tool, and the
   Playwright P0 check (42 pass / 0 fail / 1 warn). oxfmt + oxlint clean.
   Screenshots in `.verify/sanguo-menu-{zh,en}.png`, `.verify/sanguo-settings.png`.
   Then downloaded LXGW WenKai TC v1.522, built the 52 KB / 255-glyph subset
@@ -384,3 +384,8 @@ Every one of these also presented as "the battle stalls":
   them a family of six that all showed up as a battle that would not end: half
   the seeds tested hung for ever. All 16 seeds now resolve in 30-186 s. Each fix
   is an assertion in the P1 suite, which is up from 51 to 62.
+- **2026-08-30 (cont.)** — page rename: the outbreak moved to `zombiesim.html`
+  and 火柴三國 became `index.html`, the entry point. 45 references updated
+  across docs, the font tool, the scenario headers, the verify suites and
+  `.vscode/launch.json` (which now has a config per page). `example/index.html`
+  is untouched — it is the frozen reference original. All suites re-run green.

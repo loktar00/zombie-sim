@@ -15,13 +15,13 @@ The game's brush-kai face (`SANGUO-DESIGN.md` §6.3).
 `lxgw-wenkai-tc.subset.woff2` — a glyph subset of the Regular weight, cut to
 exactly the characters the game can render. The full font is far too large to
 ship, and the game's vocabulary is bounded, so `tools/subset-font.py` harvests
-every character in `js/i18n/*.js`, `js/campaign/data/*.js` and `sanguo.html`
+every character in `js/i18n/*.js`, `js/campaign/data/*.js` and `index.html`
 and cuts the font to those.
 
 The same bytes are also committed as `js/fonts/subset-data.js`, a `data:` URI.
 That exists because a `@font-face` whose `src` is a `file://` URL is a
 CORS-mode fetch from an opaque origin and browsers refuse it — without the
-data URI, a double-clicked `sanguo.html` would silently drop to system kai.
+data URI, a double-clicked `index.html` would silently drop to system kai.
 `js/fonts/font.js` tries both and reports which won via `ZS.Fonts.via`.
 
 ### Rebuilding

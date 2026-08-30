@@ -1,7 +1,7 @@
 # OUTBREAK-DESIGN.md — defender corps, outside horde, generative land, fire
 
 Work order (user priority): **F1 defenders → F2 outside horde → F3 generative
-landscape → F4 fire/grenades**. All of it lands on `index.html` (the outbreak).
+landscape → F4 fire/grenades**. All of it lands on `zombiesim.html` (the outbreak).
 `battle.html` and `hold.html` keep working unchanged. Same engine, same
 sketch style, same file:// classic-script rules (see AGENTS.md hard
 constraints).
@@ -222,7 +222,7 @@ up-right, six pinned town anchors). Vary the topology per seed.
   default path only. `layoutForest` and `placeAllTrees` may get
   slightly wider variety (grove count 5–10, forest r 300–520) but
   must respect the existing `opts` pins (`none`, `grovePos`).
-- **Verification**: two `?seed=A` loads of `index.html` render
+- **Verification**: two `?seed=A` loads of `zombiesim.html` render
   identically; different seeds differ in river orientation/lake
   presence/district count. `battle.html` (Cannae) boots unchanged.
 
@@ -813,7 +813,7 @@ that harder.
 2. `.verify/regression.js` → boots, agents separated, no page errors,
    fps sane (fit view 30+ on this box; the sim is heavier now — expect
    ~35–45).
-3. Headed Chrome (channel chrome) on `index.html`: watch a full round —
+3. Headed Chrome (channel chrome) on `zombiesim.html`: watch a full round —
    packs arriving from the edges in groups, defender arcs around the
    districts, a squad breaking and falling back to the next line,
    grenades arcing, a burning agent sprinting, a turret holding a

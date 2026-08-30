@@ -10,3 +10,5 @@ js.bak/
 /.agents/skills
 /.claude/skills
 /skills-lock.json
+__pycache__/
+*.pyc

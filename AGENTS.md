@@ -1,14 +1,17 @@
 # AGENTS.md — The Outbreak (sketch zombie sim)
 
 A hand-drawn, "boiling line" sketch-style sim. Four HTML pages share one
-core: `index.html` (the outbreak, a zombie horde in a paper town),
-`battle.html` (Cannae, 216 BC, 781-figure battle), `hold.html` (The
-Hold, a tile-based zombie clicker — design in HOLD-DESIGN.md), and
-`sanguo.html` (火柴三國 / Matchstick Three Kingdoms, a turn-based campaign
-RPG wrapped around real-time battles — design in SANGUO-DESIGN.md, build
-status in PROGRESS.md, open items in ISSUES.md). Vanilla JS, Canvas 2D. No
-framework, no build step, no bundler — and it must stay that way (see Hard
-constraints).
+core: `index.html` (火柴三國 / Matchstick Three Kingdoms, a turn-based campaign
+RPG wrapped around real-time battles — design in SANGUO-DESIGN.md, build status
+in PROGRESS.md, open items in ISSUES.md), `zombiesim.html` (the outbreak, a
+zombie horde in a paper town), `battle.html` (Cannae, 216 BC, 781-figure
+battle), and `hold.html` (The Hold, a tile-based zombie clicker — design in
+HOLD-DESIGN.md). Vanilla JS, Canvas 2D. No framework, no build step, no
+bundler — and it must stay that way (see Hard constraints).
+
+`index.html` is the entry point; the other three are the earlier sims and are
+still live. The load order below is theirs — 火柴三國 has its own (it boots a
+shell before any world exists), described in its section further down.
 
 ## Run it
 
@@ -41,7 +44,7 @@ scripts are dev tooling only (format/lint).
 
 Two layers, one contract between them:
 
-index.html / battle.html / hold.html  (same load order, page var line differs)
+zombiesim.html / battle.html / hold.html  (same load order, page var line differs)
 └── <script> load order (matters):
     <script>var ZS_SCEN = "ScenarioCannae";</script>   ← battle.html only
     <script>var ZS_WW=1600; var ZS_WH=1200; var ZS_SCEN="ScenarioHold";</script> ← hold.html only
@@ -267,7 +270,7 @@ pack shapes: tracer `{x0,y0,x1,y1,t}`, poof `{x,y,t,poof,seed}`, blood
   0.75, `SLNG_R` 190, `EXIT_PAD` 30, `HUNT_R` 900. A full battle runs
   ~60-100 s; the check script asserts 45-180 s.
 
-## 火柴三國 (`sanguo.html`, design in `SANGUO-DESIGN.md`, status in `PROGRESS.md`)
+## 火柴三國 (`index.html`, design in `SANGUO-DESIGN.md`, status in `PROGRESS.md`)
 
 A hybrid: a turn-based map-strategy RPG whose battles drop into the Cannae
 engine in real time. It is the only page with a shell (`ZS.App`: MENU →

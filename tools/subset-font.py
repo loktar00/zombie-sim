@@ -39,7 +39,7 @@ for _stream in (sys.stdout, sys.stderr):
 TEXT_GLOBS = [
     "js/i18n/*.js",
     "js/campaign/data/*.js",
-    "sanguo.html",
+    "index.html",
 ]
 
 # Always present regardless of what the tables happen to use today.

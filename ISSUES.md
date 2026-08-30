@@ -56,7 +56,7 @@ run them, which a fresh clone cannot do.
 **Why it matters now rather than later.** `pages-regression.js` is the only
 thing standing between the three original pages and the core changes 火柴三國
 made to `main.js`, `draw.js` and `agents.js`. If it is not in the repo, the
-next person to touch the core has no way to know they broke `index.html`.
+next person to touch the core has no way to know they broke `zombiesim.html`.
 
 **Options**
 
@@ -81,7 +81,7 @@ maintainer's call about repo layout.
 **OPEN · tooling · the font subset can silently fall out of date**
 
 `fonts/lxgw-wenkai-tc.subset.woff2` is cut to exactly the characters found in
-`js/i18n/*.js`, `js/campaign/data/*.js` and `sanguo.html`. Add a string with a
+`js/i18n/*.js`, `js/campaign/data/*.js` and `index.html`. Add a string with a
 new Han character and that glyph falls back to system kai — visibly a different
 face, with no error anywhere.
 

@@ -54,7 +54,7 @@ milestone (§10 P1).
 
 ## 2. Two modes, one shell
 
-`sanguo.html` is the only page. It hosts two **views** that never run at once:
+`index.html` is the only page. It hosts two **views** that never run at once:
 
 | View | Engine reuse | New |
 |---|---|---|
@@ -230,7 +230,7 @@ lays men into slots. (`FIELD_CAP` is provisional — see the perf caveat in §4.
 | `kind` | When | Reuses | Notes |
 |---|---|---|---|
 | `open` | armies clash in open country | the Cannae battlefield (`ScenarioSanguo.terrain` lays plain/river/hills/forest) | the default; `objective` = `annihilate` / `rout` / `break through` |
-| `town` | battle inside a held city with no standing wall | **`index.html` / the Outbreak town** — `ZS.Buildings.generate` streets, buildings, doors; `walkBlocked` per unit | street fighting: LOS matters, cavalry weak, `objective` usually `rout` |
+| `town` | battle inside a held city with no standing wall | **`zombiesim.html` / the Outbreak town** — `ZS.Buildings.generate` streets, buildings, doors; `walkBlocked` per unit | street fighting: LOS matters, cavalry weak, `objective` usually `rout` |
 | `fort` | attacking a walled/besieged city | **`hold.html` / the Hold** — `ZS.Tiles` ground grid + `js/blocks.js` wall/gate blocks with door-HP; defender deploys on the ring | attacker must breach a gate/wall (block HP, reuse the Outbreak door-chew + grenade/fire), defender gets a morale bonus; `objective` = `hold N turns` (defender) / `break through` (attacker). Wall-assault *tech* (ladders/rams/towers) is deferred — v1 breach = focus-fire a gate block. |
 
 `ScenarioSanguo` picks its `terrain()` implementation off `field.kind`, so all
@@ -492,7 +492,7 @@ is ~8–10 MB — too big to bundle whole. The game's text is a *bounded* set (t
 (dev tooling — `pyftsubset` / `hb-subset`, same category as oxfmt/oxlint, not a
 runtime build) produces a `fonts/lxgw-wenkai-tc.subset.woff2` of ~0.3–1 MB
 covering exactly the glyphs used, refreshed whenever `data/*` gains names. One
-`@font-face` in `sanguo.html`'s inline CSS points at that local file; a
+`@font-face` in `index.html`'s inline CSS points at that local file; a
 `.verify/` check fails the build if any rendered string contains a glyph
 outside the subset (falls back to system kai, but we want to know).
 
@@ -622,7 +622,7 @@ with the dynamic tokens drawn on top each frame.
 ## 9. File plan
 
 ```
-sanguo.html                       the only page: canvas + <div id="ui">, sets ZS_SCEN;
+index.html                       the only page: canvas + <div id="ui">, sets ZS_SCEN;
                                   inline @font-face -> fonts/lxgw-wenkai-tc.subset.woff2
 fonts/lxgw-wenkai-tc.subset.woff2 asset-time glyph subset of LXGW WenKai TC (OFL)  (§6.3)
 tools/subset-font.sh              dev-only: rebuild the subset from data/* + i18n/* (pyftsubset)
@@ -665,7 +665,7 @@ everything else is new top-level code on `window.ZS`.
 
 | Phase | Deliverable | Verify |
 |---|---|---|
-| **P0** | `sanguo.html` boots to a MENU; LXGW WenKai TC subset loads via local `@font-face`; `ZS.i18n` zh-tw/en toggle; `ZS.Auth`=`AnonAuth` mints a `deviceId`; `ZS.Store`+`LocalStore`+`SaveManager` round-trips a stub snapshot | Playwright: font renders (not fallback), switch locale, save, reload, load, assert state + `deviceId` stable |
+| **P0** | `index.html` boots to a MENU; LXGW WenKai TC subset loads via local `@font-face`; `ZS.i18n` zh-tw/en toggle; `ZS.Auth`=`AnonAuth` mints a `deviceId`; `ZS.Store`+`LocalStore`+`SaveManager` round-trips a stub snapshot | Playwright: font renders (not fallback), switch locale, save, reload, load, assert state + `deviceId` stable |
 | **P1** | **Skirmish battle**: `ScenarioSanguo` = Cannae figures + `js/battle/command.js` (box-select, right-click move via flow field, control groups) + one formation. No campaign yet. | play a battle end-to-end with mouse; deterministic-seed replay test |
 | **P2** | Battle depth: formations, morale/fatigue/rout rewrite, general units + aura, one active ability, screenshake/hitstop; **fixed sim-step + flow-field movement + render LOD** | battle feels like command, not watching; morale curve probe; **fps probe at `FIELD_CAP` 2000/side — hold ~60 fps or set the fallback cap** |
 | **P3** | **Campaign skeleton**: paper map, provinces, 3 factions, armies, march, turn phases, recruit/develop — battles still skirmish-only | play 10 turns, autosave each World phase, reload mid-campaign |
@@ -706,7 +706,7 @@ phase" discipline as `HOLD-DESIGN.md` §10.
   deterministic (seeded `ZS.rng32`, order log, no bare `Math.random`), the
   `Store`/`Auth` seams stay clean. Not designed-for beyond that.
 - **Q — Field kinds / sieges:** **`open` / `town` / `fort`**, reusing the
-  Cannae, Outbreak (`index.html`) and Hold (`hold.html`) terrain respectively.
+  Cannae, Outbreak (`zombiesim.html`) and Hold (`hold.html`) terrain respectively.
   Wall-assault tech (ladders/rams/towers) deferred; v1 breach = focus-fire a
   gate block. See §4.3.
 - **Q — Identity:** **Stage 1 anonymous local `deviceId`, no accounts.**
@@ -742,12 +742,12 @@ phase" discipline as `HOLD-DESIGN.md` §10.
 | No-overlap crowd | `ZS.updateAgents` (`SEP_R/SEP_CORE`, `sepR` override) | Cannae already tunes `sepR:13` for packed ranks |
 | Formation slots + step machine | `js/scenarios/cannae.js` | the `slot` + per-unit step script — swap the script source for player orders |
 | Large-battle choreography reference | `cannae.js` crescent/rout/hunt | morale, `a.free` routers, edge-stream, `HUNT_FRAC` all reusable |
-| `town` battlefield | `js/buildings.js` (`ZS.Buildings.generate`), the Outbreak town | streets/buildings/doors + `walkBlocked`; from `index.html` |
+| `town` battlefield | `js/buildings.js` (`ZS.Buildings.generate`), the Outbreak town | streets/buildings/doors + `walkBlocked`; from `zombiesim.html` |
 | `fort` battlefield | `js/tiles.js` (`ZS.Tiles`) + `js/blocks.js`, the Hold | ring wall / gate blocks with door-HP, tile ground; from `hold.html` |
 | Y-sorted scene + HUD pipeline | `ZS.drawScene`, `scenario.hud` | battle HUD, after-action card via `overlay()` |
 | Transient FX | `ZS.fx` (`{t}` decay/prune) | tracers, blood, dust, ability bursts |
 | Spatialized audio, no assets | `ZS.sound` (`event/tick`, formant voices) | battle cues; the scenario names events |
-| Scenario selection | `window.ZS_SCEN` → `ZS[name]` in `main.js` | `sanguo.html` sets `"ScenarioSanguo"` |
+| Scenario selection | `window.ZS_SCEN` → `ZS[name]` in `main.js` | `index.html` sets `"ScenarioSanguo"` |
 | Page-side inspection | `ZS.debug` `{cam,world,nav,buildings,scenario}` | Playwright audits, determinism probes |
 
 Nothing in `js/*.js` core changes for this game except, possibly, a fixed
