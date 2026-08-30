@@ -83,8 +83,9 @@
       // unlocks ZS.sound; we ride that same gesture to init the music
       // engine. Until then music.init() is a no-op.
       if (ZS.music) {
-        ZS.music.setVolume(this.settings.music || 0.5);
+        ZS.music.setVolume(this.settings.music);
         const _onGesture = () => {
+          if (ZS.sound) ZS.sound.unlock();
           if (ZS.music) ZS.music.init();
           window.removeEventListener("pointerdown", _onGesture, true);
         };

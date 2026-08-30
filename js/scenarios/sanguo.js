@@ -41,25 +41,26 @@
     ROUT = 4; // broken
 
   /* ---------- per-type tuning ---------- */
-  /* index = ZS.figure type: SPEAR, DAO, BOW, JI, CAV, HBOW */
+  /* index = ZS.figure type: SPEAR, DAO, BOW, JI, CAV, HBOW,
+     CATAPULT, RAM, STANDARD */
 
   /* Hit points are the main pacing lever. Cannae's numbers (3-4) resolve a
      781-man battle by annihilation in 60-100 s; this pack ends on the rout
      instead, which arrives sooner, so men take a little more killing to land
      inside the design's 60-180 s window (§1). */
-  const HP = [5, 6, 3, 5, 7, 4];
-  const REACH = [21, 17, 16, 24, 20, 16]; // melee reach; 戟 outranges 槍 outranges 刀
-  const ATK_CD = [0.8, 0.62, 0, 0.9, 0.5, 0];
-  const DMG = [1, 1, 1, 1, 2, 1];
-  const SPD = [64, 70, 72, 60, 132, 140]; // walking cap
-  const CHARGE_SPD = [96, 104, 0, 92, 180, 150];
-  const FLEE_SPD = [116, 120, 124, 112, 152, 156];
+  const HP = [5, 6, 3, 5, 7, 4, 12, 16, 8];
+  const REACH = [21, 17, 16, 24, 20, 16, 12, 27, 18]; // melee reach; 戟 outranges 槍 outranges 刀
+  const ATK_CD = [0.8, 0.62, 0, 0.9, 0.5, 0, 0, 1.15, 0.85];
+  const DMG = [1, 1, 1, 1, 2, 1, 3, 3, 1];
+  const SPD = [64, 70, 72, 60, 132, 140, 34, 42, 62]; // walking cap
+  const CHARGE_SPD = [96, 104, 0, 92, 180, 150, 0, 58, 86];
+  const FLEE_SPD = [116, 120, 124, 112, 152, 156, 58, 64, 108];
   const SEP_SLOT = 58; // how hard a man seeks his slot when not fighting
 
   /* 弩兵 / 弓騎兵: ranged */
-  const SHOOT_R = [0, 0, 230, 0, 0, 170];
-  const SHOOT_CD = [0, 0, 2.1, 0, 0, 1.8];
-  const SHOOT_MIN = [0, 0, 60, 0, 0, 55]; // back off inside this
+  const SHOOT_R = [0, 0, 230, 0, 0, 170, 360, 0, 0];
+  const SHOOT_CD = [0, 0, 2.1, 0, 0, 1.8, 4.2, 0, 0];
+  const SHOOT_MIN = [0, 0, 60, 0, 0, 55, 120, 0, 0]; // back off inside this
 
   /* 槍 beats 騎: a spear wall doubles damage against a mounted charge. */
   const ANTI_CAV = [2, 1, 1, 2.2, 1, 1];
@@ -80,7 +81,17 @@
 
   /* A default skirmish, used when nothing hands us a BattleSetup (§4.3). */
   function defaultSetup(seed) {
-    const comp = { spear: 0.42, dao: 0.24, crossbow: 0.2, cav: 0.14 };
+    const comp = {
+      spear: 0.27,
+      dao: 0.17,
+      crossbow: 0.15,
+      halberd: 0.15,
+      cav: 0.1,
+      hbow: 0.08,
+      catapult: 0.03,
+      ram: 0.03,
+      standard: 0.02,
+    };
     return {
       seed: seed | 0 || 20250830,
       field: { kind: "open", terrain: "plain", biome: "central" },
@@ -967,7 +978,7 @@
             bolt: true,
             seed: this.rnd(0, 997),
           });
-          this._hit(a, be, 1);
+          this._hit(a, be, DMG[a.type]);
         }
         this._seekSlot(a, u, dt, 40, true);
       } else if (be) {
@@ -992,7 +1003,7 @@
             bolt: true,
             seed: this.rnd(0, 997),
           });
-          this._hit(a, be, 1);
+          this._hit(a, be, DMG[a.type]);
         } else {
           this._seekSlot(a, u, dt, 30, true);
         }
@@ -1223,6 +1234,9 @@
         halberd: F().JI,
         cav: F().CAV,
         hbow: F().HBOW,
+        catapult: F().CATAPULT,
+        ram: F().RAM,
+        standard: F().STANDARD,
       };
       for (let i = 0; i < specs.length; i++) {
         const spec = specs[i] || {};
@@ -1274,7 +1288,12 @@
         ["spear", F().SPEAR, 4],
         ["dao", F().DAO, 4],
         ["crossbow", F().BOW, 3],
+        ["halberd", F().JI, 4],
         ["cav", F().CAV, 3],
+        ["hbow", F().HBOW, 3],
+        ["catapult", F().CATAPULT, 2],
+        ["ram", F().RAM, 2],
+        ["standard", F().STANDARD, 2],
       ];
       /* Ratios -> whole men by largest remainder, normalised first so a comp
          that does not sum to 1 still fields exactly `onField` soldiers. */
@@ -1299,7 +1318,12 @@
       const spear = men[0],
         dao = men[1],
         bow = men[2],
-        cav = men[3];
+        ji = men[3],
+        cav = men[4],
+        hbow = men[5],
+        catapult = men[6],
+        ram = men[7],
+        standard = men[8];
       if (spear > 0) {
         const half = Math.ceil(spear / 2);
         const p1 = place(-span * 0.22, 0);
@@ -1365,6 +1389,22 @@
           }),
         );
       }
+      if (ji > 0) {
+        const p = place(0, 55);
+        built.push(
+          this._addUnit(agents, {
+            side,
+            faction: spec.factionId,
+            type: F().JI,
+            n: ji,
+            x: p.x,
+            y: p.y,
+            head,
+            form: "line",
+            formOpts: { ranks: 4 },
+          }),
+        );
+      }
       if (cav > 0) {
         const half = Math.ceil(cav / 2);
         const p1 = place(-span * 0.62, -40);
@@ -1395,6 +1435,69 @@
             }),
           );
         }
+      }
+      if (hbow > 0) {
+        const p = place(span * 0.82, -105);
+        built.push(
+          this._addUnit(agents, {
+            side,
+            faction: spec.factionId,
+            type: F().HBOW,
+            n: hbow,
+            x: p.x,
+            y: p.y,
+            head,
+            form: "wedge",
+          }),
+        );
+      }
+      if (catapult > 0) {
+        const p = place(-span * 0.3, -180);
+        built.push(
+          this._addUnit(agents, {
+            side,
+            faction: spec.factionId,
+            type: F().CATAPULT,
+            n: catapult,
+            x: p.x,
+            y: p.y,
+            head,
+            form: "line",
+            formOpts: { ranks: 2, spacing: 34 },
+          }),
+        );
+      }
+      if (ram > 0) {
+        const p = place(span * 0.3, 95);
+        built.push(
+          this._addUnit(agents, {
+            side,
+            faction: spec.factionId,
+            type: F().RAM,
+            n: ram,
+            x: p.x,
+            y: p.y,
+            head,
+            form: "column",
+            formOpts: { ranks: 2, spacing: 34 },
+          }),
+        );
+      }
+      if (standard > 0) {
+        const p = place(0, -70);
+        built.push(
+          this._addUnit(agents, {
+            side,
+            faction: spec.factionId,
+            type: F().STANDARD,
+            n: standard,
+            x: p.x,
+            y: p.y,
+            head,
+            form: "column",
+            formOpts: { ranks: 2 },
+          }),
+        );
       }
       this._assignGenerals(built, spec.generals);
       return built;

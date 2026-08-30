@@ -1049,6 +1049,11 @@
     event,
     tick,
     unlock,
+    /* The music bus shares this AudioContext so the page owns only one audio
+       graph. Expose it read-only; it is created synchronously by unlock(). */
+    get ctx() {
+      return ac;
+    },
     get unlocked() {
       return !!ac && ac.state === "running";
     },

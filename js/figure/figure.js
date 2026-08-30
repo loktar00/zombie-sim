@@ -134,6 +134,14 @@
   /* Mid LOD: keep exactly the silhouette-bearing parts — head, torso and
      weapon — while omitting gait, face, shadow and small horse anatomy. */
   function drawMid(c, a) {
+    if (a.type === CATAPULT) {
+      drawCatapult(c, a);
+      return;
+    }
+    if (a.type === RAM) {
+      drawRam(c, a);
+      return;
+    }
     if (a.type === CAV || a.type === HBOW) {
       drawMidRider(c, a);
       return;
@@ -147,7 +155,8 @@
     c.lineCap = "round";
     ZS.wline(c, hx, hy + 4 * k, a.x, a.y, s + 23, 0.8);
     ZS.wcirc(c, hx, hy, 4 * k, s + 29, 0.65);
-    drawWeapon(c, a, hx, hy, k);
+    if (a.type === STANDARD) drawStandard(c, a, hx, hy, k);
+    else drawWeapon(c, a, hx, hy, k);
   }
 
   function drawMidRider(c, a) {
