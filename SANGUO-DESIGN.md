@@ -123,10 +123,21 @@ Camera is the existing `ZS.Camera` with the world sized to the map bitmap.
 (糧), a general roster, and armies. The classic three — 魏 / 蜀 / 吳 — plus
 群雄 minor warlords as a start pool.
 
-**Armies.** A stack of troops (abstract count, e.g. 8 000) + **1–3 assigned
-generals** + a composition (spear / dao / crossbow / cavalry ratios). Armies
-sit in a province or march along an edge. Two hostile armies in the same
-province at resolve → **battle** (§4.3).
+**Armies.** A stack of troops + **1–3 assigned generals** + a composition
+(spear / dao / crossbow / cavalry ratios). Armies sit in a province or march
+along an edge. Two hostile armies in the same province at resolve →
+**battle** (§4.3).
+
+**Scale (DECIDED — Q2: 1 figure = 1 man).** Troop counts are literal men, and
+each man is one drawn figure in battle. So the numbers are small and
+matchstick-scaled by design: a field army is **~120–500 men**, a strong
+province garrison ~80–300, an early "army" you can first afford ~60–120. The
+battle view fields at most **~1 000 figures total** (perf ceiling, `AGENTS.md`
+— and battles are usually played zoomed-in, which has headroom). If a stack
+exceeds the on-field cap (~500/side) the overflow deploys as **reserves** that
+reinforce from the back edge during the fight (the Cannae `maintain`
+edge-reinforcement path already does this). No abstract-count ↔ figure
+conversion anywhere — losses, kills and captures are all 1:1.
 
 **Generals are the RPG characters.** This is where the `rpg` skill applies —
 derived stats from base attributes, an XP curve, an equipment/skill modifier
@@ -188,18 +199,21 @@ strong passive.
 ```js
 {
   seed,                         // hash(campaignSeed, turn, atkArmyId, defArmyId) — deterministic
-  field: { terrain, biome },    // from the province (plain / river / hills / forest / siege)
+  field: { terrain, biome },    // from the province (plain / river / hills / forest / fort)
   sides: [
-    { factionId, banner, troops, comp:{spear,dao,crossbow,cav}, generals:[<resolved general>] },
+    { factionId, banner, comp:{spear,dao,crossbow,cav},   // comp -> integer men per type
+      onField, reserve,                                    // men deployed now vs streaming in
+      generals:[<resolved general snapshot>] },
     { ... }
   ],
-  figureRatio,                  // men per drawn figure, chosen so total figures ≈ 500–850
-  objective,                    // "annihilate" | "rout" | "hold N turns" (siege) | "break through"
+  objective,                    // "annihilate" | "rout" | "hold N turns" (fort) | "break through"
 }
 ```
 
-`figureRatio = ceil(totalMen / 700)`. An 8 000 vs 6 000 fight draws ~11 vs 9
-figures per "company" slot — the Cannae formation code already works in slots.
+`onField = min(troops, FIELD_CAP≈500)`, `reserve = troops - onField` (feeds in
+via the Cannae `maintain` edge path). 1 man = 1 figure — `comp` percentages
+become integer per-type men directly, and the Cannae formation code already
+lays men into slots.
 
 **Battle → Campaign** returns a `BattleResult`:
 
@@ -213,11 +227,13 @@ figures per "company" slot — the Cannae formation code already works in slots.
 }
 ```
 
-Losses are a function of the sim's actual dead tally scaled back up by
-`figureRatio`, clamped so a decisive win still costs *some* men. General
-outcome: killed if their figure died and a `zhi`-vs-`zhi` save fails; captured
-if their side routed and they were caught by the `HUNT` sweep (Cannae already
-has this behaviour for routers).
+Losses are the sim's actual dead tally, 1:1 (dead figures = dead men), clamped
+so a decisive win still costs *some* men. General outcome (DECIDED — Q7:
+permadeath is real): **killed** if their figure died and a `zhi`-vs-`zhi` save
+fails — the general is gone from the roster for good; **captured** if their
+side routed and the `HUNT` sweep caught them (Cannae already does this for
+routers) — held by the enemy faction, recruitable or executable by them;
+**wounded** on a passed death-save.
 
 **Auto-resolve.** The player may skip a battle; a closed-form model
 (`troops·quality·morale·terrain·general` → expected losses + outcome, with a
@@ -237,6 +253,10 @@ The Cannae pack today runs a **baked step script** (`HOLD/ADV/RET/CHARGE/…`).
   scenario's `pointerDown/Move/Up` hooks (already in the contract) claim the
   drag so the camera doesn't pan. Right-click = move / attack-move; shift =
   queue waypoints. A bottom **unit tray** (DOM overlay, like the Hold's UI).
+- **Active pause (DECIDED — Q5).** `Space` fully freezes the sim; orders,
+  formation changes, ability targeting and camera all still work while paused
+  (Total War / RTW style). Also exposes 1× / 2× / 4× speed. The fixed sim step
+  (§8) makes this free — pause is `accumulator` not advancing.
 - **Formations as data.** `line / column / wedge / square / skirmish`, each a
   slot-offset generator. Re-solve slot assignment (greedy nearest) when a
   unit's count changes. This is the Cannae `slot` field made dynamic.
@@ -271,7 +291,7 @@ The Cannae pack today runs a **baked step script** (`HOLD/ADV/RET/CHARGE/…`).
 
 | Concern | Campaign (turn) | Battle (real-time) |
 |---|---|---|
-| Troop counts | authoritative | works on figures, reports deltas back |
+| Troop counts | authoritative | 1 figure = 1 man; dead figures subtract 1:1 |
 | General stats | authoritative, persisted | read-only snapshot; only `xp`, `injury`, `captured` flow back |
 | Terrain | province type | generates the field |
 | RNG | `campaignSeed` + turn | derived `BattleSetup.seed`, deterministic |
@@ -588,29 +608,38 @@ phase" discipline as `HOLD-DESIGN.md` §10.
 
 ---
 
-## 11. Open questions (defaults in bold; answer when it matters)
+## 11. Open questions
 
-1. **Scope of the campaign map** — **~40–60 provinces, single scenario
-   (184 or 194 CE start)** vs a bigger map / multiple start dates. Bigger =
-   much more content and AI work.
-2. **Troop model in battle** — **abstract count → `figureRatio` sample** (above)
-   vs 1 figure = 1 man capped at ~800 (simpler, but caps army size low).
-3. **Canvas CJK boil** — **system font + per-glyph micro-jitter** vs invest in a
+### Decided (v0.1)
+
+- **Q1 — Campaign map scope:** **~40–60 provinces, one scenario / one start
+  date.** No multi-era campaign. (Start date TBD — leaning 194 CE, post-Dong
+  Zhuo, three powers already forming.)
+- **Q2 — Battle troop model:** **1 figure = 1 man.** No abstract count. Army
+  sizes in the low hundreds, on-field cap ~500/side with the rest as
+  reinforcing reserves, ≤ ~1 000 figures total per battle. Ripples through
+  §4.1 (scale), §4.3 (`BattleSetup`/`BattleResult` are 1:1), campaign
+  economy (recruit costs/caps in men).
+- **Q5 — Real-time pause:** **active pause** — `Space` freezes the sim; orders,
+  formations, ability targeting, camera still work while paused. Plus
+  1× / 2× / 4×. Free given the fixed sim step (§8). See §4.4.
+- **Q7 — General permadeath:** **yes, killed generals are gone for good.**
+  Captured generals are held by the enemy (recruitable/executable by them);
+  wounded on a passed `zhi` death-save. See §4.3.
+
+### Still open
+
+1. **Canvas CJK boil** — **system font + per-glyph micro-jitter** (default) vs a
    pre-rendered glyph atlas for the ~2 000 common hanzi (sharper boil, big
    asset, offline-friendly but heavy).
-4. **Auto-resolve fidelity** — how close must skipped battles track played ones?
-   **±15% losses, same winner 95% of the time.**
-5. **Real-time pause** — **full pause + issue orders while paused** (accessible,
-   "active pause" like RTW) vs no pause (twitchier).
-6. **Multiplayer** — **out of scope**, but the deterministic-battle +
+2. **Auto-resolve fidelity** — how close must skipped battles track played ones?
+   **±15% losses, same winner 95% of the time** (default).
+3. **Multiplayer** — **out of scope** (default), but the deterministic-battle +
    order-log design keeps lockstep possible later. Confirm we're not designing
    for it now.
-7. **General permadeath** — **killed generals are gone for good** (stakes) vs
-   "captured/wounded only, never killed" (roster preservation).
-8. **Siege battles** — separate objective/field type in v1, or defer to v2?
-   **Defer the wall-assault tech; a besieged province just fights on a
-   "fort" field with a morale bonus for the defender in v1.**
-9. **Server auth model** — when the backend lands, account system vs anonymous
+4. **Siege battles** — **defer the wall-assault tech** (default); a besieged
+   province fights on a "fort" field with a defender morale bonus in v1.
+5. **Server auth model** — when the backend lands, account system vs anonymous
    device token? Doesn't block anything now; `RemoteStore` takes a token
    string either way.
 
