@@ -66,9 +66,9 @@
     "battle.title": "Skirmish",
     "battle.stats": "yours {own} ({ownLost} dead) · theirs {foe} ({foeLost} dead) · {time}",
     "battle.hint":
-      "drag to select · right-click to attack · A all · H halt · F formation · space pauses",
+      "drag to select · right-click to attack · A all · H halt · F formation · G inspire · space pauses",
     "battle.hint.selected":
-      "{n} selected · right-click attacks · ctrl+right marches · shift queues · ctrl+digit groups · middle-drag pans",
+      "{n} selected · right-click attacks · ctrl+right marches · shift queues · ctrl+digit groups · G inspire · middle-drag pans",
     "battle.win": "The field is yours",
     "battle.lose": "Your line is broken",
     "battle.result": "{dead} of theirs dead · {fled} fled",
@@ -91,6 +91,9 @@
     "battle.type.catapult": "Catapult",
     "battle.type.ram": "Battering ram",
     "battle.type.standard": "Standard bearer",
+    "battle.general.fire": "General Huo",
+    "battle.general.edge": "General Feng",
+    "battle.general.unknown": "General",
 
     "err.saveFailed": "Save failed: {code}",
     "err.loadFailed": "Load failed: {code}",

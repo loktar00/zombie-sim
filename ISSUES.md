@@ -23,7 +23,7 @@ someone could reasonably trip over.
 | [4](#4) | DEFERRED | battle | `open` battlefields are a bare plain — no river, hills or forest |
 | [5](#5) | DEFERRED | battle | `FIELD_CAP = 2000` is unvalidated; P1 fields 320/side |
 | [6](#6) | DEFERRED | battle | Enemy commander AI is a placeholder |
-| [7](#7) | DEFERRED | structure | Battle systems that §9 wants split still live in `sanguo.js` |
+| [7](#7) | DEFERRED | structure | Commander AI and future duels still need their §9 files |
 | [8](#8) | NIT | tooling | `oxfmt js/` rewrites line endings across every core file |
 | [9](#9) | NIT | render | `scenario.hud()` allocates per frame |
 
@@ -113,16 +113,17 @@ right:
 | `STALL_GIVEUP` | `js/scenarios/sanguo.js` | 12 s | how long a unit may make no progress before its order is dropped |
 | `HP` | `js/scenarios/sanguo.js` | `[5,6,3,5,7,4]` | the main pacing lever |
 
-Across the 16-seed sweep battles resolve in **30–186 s**. The design wants
-60–180 s (§1), so the fast tail is out of range — two seeds finished in 30 s and
-35 s. Nothing is broken; it is just quicker than intended at the low end.
+The old P1 16-seed sweep resolved in **30–186 s**. After the P2 morale rewrite,
+a six-seed sample resolves in **80–151 s**, inside the design's 60–180 s target.
+That is encouraging but not a retune: the full sweep still needs to run after
+the commander AI and formation work stop moving the pressure curve.
 
 `STALL_GIVEUP` in particular is a backstop, not a mechanism: if it is firing
 often in normal play, something else is wrong and it is hiding it. Worth
 instrumenting how often it triggers before trusting it.
 
-**Next step:** P2 rewrites morale and fatigue (§4.4), which changes all of this.
-Retune after that, not before.
+**Next step:** instrument how often `STALL_GIVEUP` fires, then run the full seed
+sweep and retune after the rest of P2 (commander AI and formations).
 
 ---
 
@@ -187,17 +188,17 @@ does not coordinate: two blocks will happily pick the same target.
 
 ## 7
 
-**DEFERRED · structure · battle systems §9 wants split still live in `sanguo.js`**
+**DEFERRED · structure · commander AI and future duels still need their §9 files**
 
 The file plan lists `js/battle/morale.js`, `js/battle/duel.js`,
-`js/battle/commander-ai.js` and `js/battle/ability.js`. Morale and the
-commander AI are currently methods on `ScenarioSanguo`; duels and abilities do
-not exist yet.
+`js/battle/commander-ai.js` and `js/battle/ability.js`. P2 has now split morale
+and the first active ability into their intended files. The commander AI is
+still a method on `ScenarioSanguo`, and duels do not exist yet.
 
-Deliberate for P1 — splitting a system before it has grown is how you get the
-wrong seam. P2 rewrites morale and adds abilities, which is the natural moment
-to pull them out. `js/battle/flowfield.js`, `formation.js` and `command.js` did
-get their own files, because they were self-contained from the start.
+The remaining structural work follows the feature phases: the influence-map
+planner moves to `commander-ai.js` in P2; duels arrive with general RPG depth
+in P5. `js/battle/flowfield.js`, `formation.js`, `command.js`, `morale.js` and
+`ability.js` are already self-contained.
 
 ---
 

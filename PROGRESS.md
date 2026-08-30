@@ -15,30 +15,26 @@ re-deriving anything.
 
 | | |
 |---|---|
-| **Phase** | **P1 — the skirmish battle** |
-| **Status** | ✅ **complete** (P0 ✅ too) |
-| **Verify** | `node .verify/sanguo-p1.js` → **62 passed, 0 failed**<br>`node .verify/sanguo-p0.js` → **45 / 0 / 0**<br>`node .verify/pages-regression.js` → **23 / 0** (the other three pages)<br>`node .verify/sanguo-seed-sweep.js` → 16/16 battles resolve |
+| **Phase** | **P2 — battle depth** |
+| **Status** | 🚧 **in progress** (P0–P1 ✅) |
+| **Verify** | P2 local browser probe: **6/6 seeds resolve in 80–151 s**, fixed-seed replay is identical, morale/rally/ability checks pass, original three pages boot clean<br>P1 baseline (machine-local suites): 62 / 45 / 23 assertions; 16-seed sweep green before P2 |
 | **Updated** | 2026-08-30 |
 
 ### Next action
 
-**Start P2 — battle depth.** The pieces, roughly in order:
+**Continue P2 — battle depth.** Morale, general units and the first active
+ability are complete. The remaining pieces, roughly in order:
 
-1. **Morale / fatigue / rout rewrite** (§4.4). P1 ships Cannae's local-press
-   model plus fatigue; P2 wants the unit morale pool fed by casualties, flank
-   and rear hits, general proximity and local outnumbering, with
-   `wavering -> routing -> rally`, and rally only near a general.
-2. **General units** — one figure per assigned general at tier 將, the name
-   banner and the aura ring (`ZS.figure` already draws all three; nothing
-   creates a general yet), plus the morale shock when one falls.
-3. **One active ability**, through `js/battle/ability.js`.
-4. **Game feel** — screenshake on charges, hitstop on a general kill, `ZS.fx`
+1. **Game feel** — screenshake on charges, hitstop on a general kill, `ZS.fx`
    bursts along the hit vector.
-5. **Render LOD + the `FIELD_CAP` fps probe.** `ZS.figure.drawFoot` is the
+2. **Enemy commander AI** — move the placeholder planner into
+   `js/battle/commander-ai.js`; add the influence map and morale-aware behaviour
+   tree from §4.4.
+3. **Render LOD + the `FIELD_CAP` fps probe.** `ZS.figure.drawFoot` is the
    near-detail case; add mid (head/torso/weapon) and far (`wpoly` mass shapes)
    buckets keyed on camera distance, then probe 2000/side and either confirm
    the cap or set the fallback of about 800 (the perf caveat in §4.1).
-6. Formation tuning: P1 wires all five generators and really only tunes
+4. **Formation tuning** — P1 wires all five generators and really only tunes
    `line` and `wedge`.
 
 The fixed sim step P2 also lists is **already done** — P1's determinism test
@@ -54,7 +50,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ done · ⛔ blocked
 |---|---|---|
 | P0 | boot to MENU, font, i18n, Auth/Store/SaveManager round-trip | ✅ |
 | P1 | Skirmish battle: `ScenarioSanguo` + command layer | ✅ |
-| P2 | Battle depth: formations, morale, abilities, fixed step, LOD | ☐ |
+| P2 | Battle depth: formations, morale, abilities, fixed step, LOD | 🚧 |
 | P3 | Campaign skeleton: map, provinces, armies, turn phases | ☐ |
 | P4 | The handoff: `BattleSetup`/`BattleResult`, field kinds, auto-resolve | ☐ |
 | P5 | Generals as RPG: xp, skills, items, loyalty, duels | ☐ |
@@ -177,6 +173,43 @@ the rest. Settings.music flows into `music.setVolume` automatically.
   a running battle untouched; an unreachable goal is refused and leaves the
   current order intact
 - the three original pages are untouched by the core changes
+
+---
+
+## P2 task board
+
+| # | Task | Status | Files |
+|---|---|---|---|
+| 2.1 | Unit morale pool: casualties, odds, flank/rear pressure and fatigue | ✅ | `js/battle/morale.js` |
+| 2.2 | `steady → wavering → routing → rally`; rally only inside a living general's aura | ✅ | `js/battle/morale.js`, `js/scenarios/sanguo.js` |
+| 2.3 | General figures from `BattleSetup.generals`: tier 將, name banner, derived aura/cohesion, command-loss shock | ✅ | `js/scenarios/sanguo.js`, `js/figure/figure.js` |
+| 2.4 | First active ability: deterministic, cooldown-gated inspire / 將令 morale heal | ✅ | `js/battle/ability.js`, `js/battle/command.js` |
+| 2.5 | Morale bar + inspire ring/tick feedback | ✅ | `js/battle/command.js`, `js/scenarios/sanguo.js` |
+| 2.6 | Charge shake, general-kill hitstop and hit-vector bursts | ☐ | — |
+| 2.7 | Influence-map enemy commander | ☐ | `js/battle/commander-ai.js` |
+| 2.8 | Render LOD + headed `FIELD_CAP` fps probe | ☐ | `js/figure/figure.js` |
+| 2.9 | Tune column / square / skirmish formations | ☐ | `js/battle/formation.js` |
+
+### What the P2 slice proves so far
+
+- the default 640-man skirmish still fields exactly 640 figures; one figure on
+  each side is promoted to the general supplied by `BattleSetup`, not added as
+  a free extra body
+- morale is updated per unit four times per second rather than by a hot-loop
+  neighbour scan on every agent; no per-frame records or arrays are allocated
+- casualty rate, local odds, rear pressure and average fatigue lower the pool;
+  a living general raises its ceiling/recovery and formation cohesion
+- a general death or rout shocks every still-fighting friendly unit exactly
+  once; routed blocks can recover only while on-field fugitives remain inside
+  another living general's aura
+- `G` invokes inspire through `js/battle/ability.js`; it scales from `zhi`,
+  respects a 24 s cooldown, writes to the deterministic order log, and gives a
+  short sketch-ring/tick response that returns to rest
+- a six-seed passive-player probe resolves every battle in 80–151 s; seed 47
+  replayed with the same duration, winner, side ledger and agent-position
+  digest; wavering and rally both occurred in every sampled battle
+- `zombiesim.html`, `battle.html` and `hold.html` still boot their own scenario
+  with 509 / 781 / 0 initial agents and no page errors
 
 ---
 
@@ -421,3 +454,11 @@ Every one of these also presented as "the battle stalls":
   across docs, the font tool, the scenario headers, the verify suites and
   `.vscode/launch.json` (which now has a config per page). `example/index.html`
   is untouched — it is the frozen reference original. All suites re-run green.
+- **2026-08-30 (cont.)** — started P2. Replaced per-agent local-press morale
+  with `js/battle/morale.js`: a unit pool driven by losses, odds, rear pressure,
+  fatigue and commander presence, with wavering, routing and general-gated
+  rally. Promoted `BattleSetup.generals` into real tier-將 figures with derived
+  aura/cohesion and command-loss shock. Added the first cooldown active in
+  `js/battle/ability.js` (`G`: inspire / 將令), its deterministic order-log
+  entry, morale bar and sketch-ring feedback. Six fixed seeds resolve in
+  80–151 s; seed 47 replays identically; the three earlier pages boot clean.

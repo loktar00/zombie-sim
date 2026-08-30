@@ -64,8 +64,6 @@
   /* 槍 beats 騎: a spear wall doubles damage against a mounted charge. */
   const ANTI_CAV = [2, 1, 1, 2.2, 1, 1];
 
-  const MOR_R = 56; // morale neighbourhood
-  const UNIT_BREAK = 0.42; // living fraction at which a unit's nerve goes
   const EXIT_PAD = 30;
   const HUNT_FRAC = 0.65;
   const HUNT_R = 900;
@@ -86,8 +84,38 @@
       seed: seed | 0 || 20250830,
       field: { kind: "open", terrain: "plain", biome: "central" },
       sides: [
-        { factionId: 0, comp, onField: 320, reserve: 0, generals: [] },
-        { factionId: 1, comp, onField: 320, reserve: 0, generals: [] },
+        {
+          factionId: 0,
+          comp,
+          onField: 320,
+          reserve: 0,
+          generals: [
+            {
+              id: "fire_general",
+              name: "battle.general.fire",
+              wu: 82,
+              tong: 86,
+              zhi: 74,
+              unitType: "dao",
+            },
+          ],
+        },
+        {
+          factionId: 1,
+          comp,
+          onField: 320,
+          reserve: 0,
+          generals: [
+            {
+              id: "edge_general",
+              name: "battle.general.edge",
+              wu: 88,
+              tong: 82,
+              zhi: 78,
+              unitType: "cav",
+            },
+          ],
+        },
       ],
       objective: "rout",
     };
@@ -99,6 +127,7 @@
       this.fx = null; // set by the engine: the core's effect record array
       this.stains = null;
       this.units = [];
+      this.generals = [];
       this.sides = [];
       this.sepR = 13; // packed ranks sit at slot spacing (inherited from Cannae)
       this.hudFont = ZS.CJK_STACK; // the HUD is Chinese; draw.js asks for this
@@ -114,6 +143,8 @@
       this.rng = null;
       this.nextUid = 1;
       this.orderLog = []; // (t, unit, order) — the replay record (§3.6)
+      this.morale = null;
+      this.abilities = null;
     }
 
     /* ---------- deterministic randomness (§3.6) ---------- */
@@ -310,6 +341,12 @@
         fdir: 0,
         name: extra.name || null,
         auraR: extra.auraR || 0,
+        general: !!extra.general,
+        generalId: extra.generalId || null,
+        wu: extra.wu || 0,
+        tong: extra.tong || 0,
+        zhi: extra.zhi || 0,
+        commandLost: false,
       };
     }
 
@@ -326,7 +363,8 @@
       const u = this.units[a.un];
       const base = u && u.st === CHARGE ? CHARGE_SPD[a.type] || SPD[a.type] : SPD[a.type];
       // fatigue costs up to a third of the top speed
-      return base * (1 - 0.33 * Math.min(1, a.fatigue));
+      const nerve = u && u.morState === ZS.BattleMorale.WAVERING ? 0.82 : 1;
+      return base * nerve * (1 - 0.33 * Math.min(1, a.fatigue));
     }
 
     /* ---------- orders (the whole point of the pack) ---------- */
@@ -361,6 +399,10 @@
       unit.reslot = 0;
       this.orderLog.push({ t: Math.round(this.bt * 100) / 100, u: unit.uid, k: "form", f: kind });
       return true;
+    }
+
+    useAbility(id, general) {
+      return this.abilities ? this.abilities.use(id, general) : false;
     }
 
     _beginOrder(u, o) {
@@ -452,24 +494,45 @@
         }
       }
 
-      // unit centroids and strength
+      // Unit centroids, strength and average fatigue. Routing blocks keep a
+      // centroid over their on-field fugitives so a nearby general can rally
+      // them; gone men never come back.
       for (const u of this.units) {
         let sx = 0,
           sy = 0,
-          n = 0;
+          n = 0,
+          rsx = 0,
+          rsy = 0,
+          rn = 0,
+          fatigue = 0;
         for (let i = 0; i < u.mem.length; i++) {
           const m = u.mem[i];
-          if (m.dead || m.routFlag) continue;
-          sx += m.x;
-          sy += m.y;
-          n++;
+          if (m.dead || m.gone) continue;
+          fatigue += m.fatigue;
+          if (m.routFlag) {
+            rsx += m.x;
+            rsy += m.y;
+            rn++;
+          } else {
+            sx += m.x;
+            sy += m.y;
+            n++;
+          }
         }
         if (n) {
           u.cx = sx / n;
           u.cy = sy / n;
+        } else if (rn) {
+          u.cx = rsx / rn;
+          u.cy = rsy / rn;
         }
         u.alive = n;
+        u.routAlive = rn;
+        u.avgFatigue = fatigue / Math.max(1, n + rn);
       }
+
+      if (this.morale) this.morale.frame(dt);
+      if (this.abilities) this.abilities.update(dt);
 
       // formations wheel toward their heading rather than snapping
       for (const u of this.units) {
@@ -488,9 +551,7 @@
         this._driveUnit(u, dt, grid);
       }
 
-      // a unit that has bled past its nerve breaks as a body
       for (const u of this.units) {
-        if (u.st !== ROUT && u.alive > 0 && u.alive <= u.size0 * UNIT_BREAK) this._breakUnit(u);
         if (u.st !== ROUT && u.alive === 0) u.st = ROUT;
       }
 
@@ -622,9 +683,46 @@
     }
 
     _breakUnit(u) {
+      if (u.st === ROUT) return;
       u.st = ROUT;
+      u.morState = ZS.BattleMorale.ROUTING;
+      u.morale = Math.min(u.morale, u.moraleMax * 0.18);
+      u.rallyProgress = 0;
       u.orders.length = 0;
       for (let i = 0; i < u.mem.length; i++) if (!u.mem[i].dead) this._setRout(u.mem[i]);
+    }
+
+    _rallyUnit(u) {
+      if (u.st !== ROUT || !u.routAlive) return false;
+      const side = this.sides[u.side];
+      let rallied = 0;
+      for (let i = 0; i < u.mem.length; i++) {
+        const a = u.mem[i];
+        if (a.dead || a.gone || !a.routFlag) continue;
+        a.routFlag = 0;
+        a.fleeing = false;
+        a.free = false;
+        a.rallyT = 6;
+        a.fdirC = -999;
+        a.vx *= 0.35;
+        a.vy *= 0.35;
+        side.routed--;
+        side.alive++;
+        rallied++;
+      }
+      if (!rallied) return false;
+      u.st = HOLD;
+      u.orders.length = 0;
+      u.tx = u.cx;
+      u.ty = u.cy;
+      u.turn = u.head;
+      u.alive = rallied;
+      u.routAlive = 0;
+      u.morState = ZS.BattleMorale.WAVERING;
+      u.morale = Math.max(u.morale, u.moraleMax * 0.38);
+      u.waveringT = 0;
+      u.rallyProgress = 0;
+      return true;
     }
 
     /* A side is beaten when nobody on it is still fighting: the men are dead,
@@ -763,8 +861,9 @@
       let txv = u.dx,
         tyv = u.dy;
       if (d > 9) {
-        txv += (dx / d) * sp;
-        tyv += (dy / d) * sp;
+        const cohesion = u.cohesion || 0.72;
+        txv += (dx / d) * sp * cohesion;
+        tyv += (dy / d) * sp * cohesion;
         a.a = faceHead ? u.head : Math.atan2(dy, dx);
       } else if (faceHead) a.a = u.head;
       a.vx += (txv - a.vx) * k;
@@ -872,7 +971,6 @@
           ZS.planAndFollow(a, TG, true, SEP_SLOT, dt, t, nav);
         }
       }
-      this._morale(a, dt, grid);
     }
 
     _updateShooter(a, dt, grid, u) {
@@ -938,7 +1036,6 @@
       } else {
         this._seekSlot(a, u, dt, 40, true);
       }
-      this._morale(a, dt, grid);
     }
 
     _updateRider(a, dt, t, grid, nav, u) {
@@ -982,7 +1079,6 @@
           }
         }
       }
-      this._morale(a, dt, grid);
     }
 
     /* ---------- combat ---------- */
@@ -999,6 +1095,7 @@
       }
       be.hp -= d;
       be.flash = 0.3;
+      if (this.morale) this.morale.hit(be, a, d);
       this.fx.push({
         x: (a.x + be.x) / 2,
         y: (a.y + be.y) / 2,
@@ -1023,6 +1120,7 @@
       // invariant: dead + routed + alive = total0
       if (a.routFlag) s.routed--;
       else s.alive--;
+      if (this.morale) this.morale.casualty(a);
       if (this.stains) this.stains.corpse(a);
       this.fx.push({ x: a.x, y: a.y, t: 0.3, poof: true, seed: a.seed });
       this.fx.push({ x: a.x, y: a.y - 4, t: 0.45, blood: 2, seed: a.seed + 11 });
@@ -1037,46 +1135,8 @@
       const s = this.sides[a.side];
       s.routed++;
       s.alive--;
+      if (a.general && this.morale) this.morale.generalLost(a);
       this.fx.push({ x: a.x, y: a.y - 6, t: 0.3, poof: true, seed: a.seed });
-    }
-
-    /* Morale is local: too many enemies close, neighbours running, or caught
-       front and rear — and the man turns his back. Fatigue makes all three
-       worse, which is what makes a long fight different from a short one. */
-    _morale(a, dt, grid) {
-      if (a.routFlag) return;
-      a.morT -= dt;
-      if (a.morT > 0) return;
-      a.morT = 0.45 + ZS.hash(a.seed + 3) * 0.5;
-      let f = 0,
-        fr = 0,
-        e = 0,
-        ef = 0,
-        er = 0;
-      const ca = Math.cos(a.a),
-        sa = Math.sin(a.a);
-      grid.query(a.x, a.y, MOR_R, (b) => {
-        if (b === a) return;
-        if (b.side === a.side) {
-          f++;
-          if (b.fleeing) fr++;
-          return;
-        }
-        e++;
-        const dx = b.x - a.x,
-          dy = b.y - a.y;
-        if (dx * ca + dy * sa > 0) ef++;
-        else er++;
-      });
-      if (!e) return;
-      const press = e / (f + e + 1);
-      // a tired man breaks at a lower press than a fresh one
-      const nerve = 1 - a.fatigue * 0.25;
-      let brk = false;
-      if (press > 0.75 * nerve && e >= 6) brk = true;
-      else if (fr >= 3 && press > 0.45 * nerve) brk = true;
-      else if (ef > 0 && er >= 2 && press > 0.35 * nerve) brk = true;
-      if (brk && a.rallyT <= 0) this._setRout(a);
     }
 
     /* ---------- deployment ---------- */
@@ -1106,6 +1166,17 @@
         reslot: 2.5,
         size0: opt.n,
         alive: opt.n,
+        routAlive: 0,
+        avgFatigue: 0,
+        moraleMax: 0,
+        morale: 0,
+        moraleShock: 0,
+        morState: ZS.BattleMorale.STEADY,
+        waveringT: 0,
+        rallyProgress: 0,
+        nearGeneral: null,
+        cohesion: 0.72,
+        general: null,
         contact: 0,
         hunting: false,
         huntT: 0,
@@ -1154,6 +1225,57 @@
         this.sides[opt.side].alive++;
       }
       return u;
+    }
+
+    _assignGenerals(units, specs) {
+      if (!units.length || !specs || !specs.length) return;
+      const typeByName = {
+        spear: F().SPEAR,
+        dao: F().DAO,
+        crossbow: F().BOW,
+        halberd: F().JI,
+        cav: F().CAV,
+        hbow: F().HBOW,
+      };
+      for (let i = 0; i < specs.length; i++) {
+        const spec = specs[i] || {};
+        const wanted = typeByName[spec.unitType];
+        let unit = null;
+        if (wanted !== undefined) {
+          for (let k = 0; k < units.length; k++) {
+            if (units[k].type === wanted && !units[k].general) {
+              unit = units[k];
+              break;
+            }
+          }
+        }
+        if (!unit) {
+          for (let k = 0; k < units.length; k++) {
+            const candidate = units[(i + k) % units.length];
+            if (!candidate.general) {
+              unit = candidate;
+              break;
+            }
+          }
+        }
+        if (!unit) unit = units[i % units.length];
+        const a = unit.mem[0];
+        if (!a) continue;
+        const tong = ZS.clamp(Number(spec.tong) || 50, 1, 100);
+        a.tier = F().GENERAL;
+        a.general = true;
+        a.generalId = spec.id || "general_" + a.side + "_" + i;
+        a.name = spec.name || "battle.general.unknown";
+        a.wu = ZS.clamp(Number(spec.wu) || 50, 1, 100);
+        a.tong = tong;
+        a.zhi = ZS.clamp(Number(spec.zhi) || 50, 1, 100);
+        a.auraR = 70 + tong * 0.9;
+        a.hp += 5 + Math.round(a.wu * 0.04);
+        a.hp0 = a.hp;
+        unit.general = a;
+        unit.name = a.name;
+        this.generals.push(a);
+      }
     }
 
     /* Turn a side's `comp` percentages into whole men, then into blocks.
@@ -1287,6 +1409,7 @@
           );
         }
       }
+      this._assignGenerals(built, spec.generals);
       return built;
     }
 
@@ -1348,6 +1471,7 @@
       this.lastBloodT = 0;
       this.aiT = 1.5;
       this.units = [];
+      this.generals = [];
       this.nextUid = 1;
       this.orderLog = [];
       this.sides = [
@@ -1367,6 +1491,10 @@
       this._deploySide(agents, 0, setup.sides[0], f.x - gap / 2, f.y, 0, span);
       this._deploySide(agents, 1, setup.sides[1], f.x + gap / 2, f.y, Math.PI, span);
       for (let i = 0; i < 2; i++) this.sides[i].total0 = this.sides[i].alive;
+      this.morale = new ZS.BattleMorale(this);
+      this.morale.init();
+      this.abilities = new ZS.BattleAbilities(this);
+      this.abilities.init();
       if (ZS.Command) ZS.Command.attach(this);
     }
 
@@ -1472,7 +1600,26 @@
 
     drawFX(c, fx) {
       for (const sh of fx) {
-        if (sh.bolt) {
+        if (sh.inspire) {
+          const k = sh.t / 0.85;
+          const eased = 1 - k * k;
+          c.strokeStyle = F().wash(0, 0.2 + k * 0.45);
+          c.lineWidth = 1.6;
+          ZS.wcirc(c, sh.x, sh.y, 18 + eased * sh.r, sh.seed, 2.2);
+          for (let i = 0; i < 8; i++) {
+            const an = (i / 8) * Math.PI * 2 + ZS.hash(sh.seed) * 0.4;
+            const d = 12 + eased * 42;
+            ZS.wline(
+              c,
+              sh.x + Math.cos(an) * d,
+              sh.y + Math.sin(an) * d,
+              sh.x + Math.cos(an) * (d + 7 * k),
+              sh.y + Math.sin(an) * (d + 7 * k),
+              sh.seed + i * 5,
+              0.8,
+            );
+          }
+        } else if (sh.bolt) {
           // a crossbow bolt: a hard straight tick, not the sling's lob
           const k = 1 - sh.t / 0.22;
           const bx = sh.x0 + (sh.x1 - sh.x0) * k,

@@ -277,6 +277,9 @@
         case "f":
           this.cycleFormation();
           break;
+        case "g":
+          this.scen.useAbility("inspire");
+          break;
         case "escape":
           this.clear();
           break;
@@ -377,6 +380,30 @@
         c.lineWidth = 2.4;
         if (frac > 0) {
           ZS.wline(c, u.cx - bw / 2, by, u.cx - bw / 2 + bw * frac, by, u.uid * 3.1 + 1, 0.5);
+        }
+
+        // Morale is a separate pool from bodies. The shorter line underneath
+        // turns ochre while wavering, so the player can see a break coming and
+        // bring a general's aura over before the unit runs.
+        const morale = u.moraleMax ? u.morale / u.moraleMax : 0;
+        c.strokeStyle = "rgba(61,52,43,0.24)";
+        c.lineWidth = 1;
+        ZS.wline(c, u.cx - bw / 2, by + 5, u.cx + bw / 2, by + 5, u.uid * 3.1 + 2, 0.5);
+        c.strokeStyle =
+          u.morState === ZS.BattleMorale.WAVERING
+            ? "rgba(150,120,60,0.9)"
+            : ZS.figure.wash(u.faction, 0.62);
+        c.lineWidth = 1.8;
+        if (morale > 0) {
+          ZS.wline(
+            c,
+            u.cx - bw / 2,
+            by + 5,
+            u.cx - bw / 2 + bw * morale,
+            by + 5,
+            u.uid * 3.1 + 3,
+            0.5,
+          );
         }
 
         // the order it is carrying out
