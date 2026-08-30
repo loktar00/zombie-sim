@@ -6,8 +6,9 @@ core: `index.html` (the outbreak, a zombie horde in a paper town),
 Hold, a tile-based zombie clicker — design in HOLD-DESIGN.md), and
 `sanguo.html` (火柴三國 / Matchstick Three Kingdoms, a turn-based campaign
 RPG wrapped around real-time battles — design in SANGUO-DESIGN.md, build
-status in PROGRESS.md). Vanilla JS, Canvas 2D. No framework, no build step,
-no bundler — and it must stay that way (see Hard constraints).
+status in PROGRESS.md, open items in ISSUES.md). Vanilla JS, Canvas 2D. No
+framework, no build step, no bundler — and it must stay that way (see Hard
+constraints).
 
 ## Run it
 

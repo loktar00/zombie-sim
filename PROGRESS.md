@@ -7,6 +7,7 @@ re-deriving anything.
 
 - Design contract: `SANGUO-DESIGN.md` (§10 has the phase table)
 - Engine rules: `AGENTS.md` (hard constraints — file://, no build step, oxfmt/oxlint)
+- Open issues: [`ISSUES.md`](ISSUES.md) — one needs a decision (issue 1)
 
 ---
 
@@ -251,7 +252,8 @@ live in `SANGUO-DESIGN.md` §11.)
 
 ## Open / blocked
 
-- Nothing blocking P2.
+Tracked in [`ISSUES.md`](ISSUES.md). Nothing blocks P2; issue 1 (the test
+suites are not committed) is waiting on a call about repo layout.
 - **Rebuild the font subset whenever `js/i18n/*.js` or `js/campaign/data/*.js`
   gains new text** — new glyphs silently fall back otherwise. `.verify/sanguo-p0.js`
   runs the coverage check for you; standalone it is
@@ -382,16 +384,3 @@ Every one of these also presented as "the battle stalls":
   them a family of six that all showed up as a battle that would not end: half
   the seeds tested hung for ever. All 16 seeds now resolve in 30-186 s. Each fix
   is an assertion in the P1 suite, which is up from 51 to 62.
-
----
-
-## A caveat about `.verify/`
-
-`.gitignore` excludes `.verify/`, which is the project's existing convention
-(`AGENTS.md` calls it the scratch area). It does mean **the verification suites
-are not committed** — they exist in this working copy only, so a fresh clone
-would have the game but none of its tests. Worth deciding one way or the other
-before that matters; committing `sanguo-p0.js`, `sanguo-p1.js`,
-`pages-regression.js` and `sanguo-seed-sweep.js` would cost little and is what
-the "read PROGRESS.md and run the suites" instruction at the top of this file
-assumes.
